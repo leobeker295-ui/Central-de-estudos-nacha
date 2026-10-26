@@ -151,7 +151,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .kpi.lead small{color:var(--lav-deep)}
 .kpi.lead .bar{background:rgba(255,255,255,.15);margin-top:6px}
 :root[data-theme="dark"] .kpi.lead{background:var(--pink-soft);color:var(--ink)}
+:root[data-theme="dark"] .kpi.lead label,:root[data-theme="dark"] .kpi.lead small{color:var(--ink-2)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi.lead{background:var(--pink-soft);color:var(--ink)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi.lead label,:root:not([data-theme="light"]) .kpi.lead small{color:var(--ink-2)}}
 
 /* Content rows + animated check */
 .subj{display:flex;flex-direction:column;gap:2px}
