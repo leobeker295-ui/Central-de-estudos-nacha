@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Central de Estudos</title>
+<script>try { const t = localStorage.getItem("central-estudos-tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) { }</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
@@ -71,6 +72,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .top .overall span{font-size:.82rem;color:var(--ink-2);white-space:nowrap}
 .top .spacer{flex:1}
 .mob-brand{display:none}
+.theme-btn{flex:none}
 .content{padding-block:24px 60px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;max-width:1240px;width:100%}
 .foot{margin-top:auto;padding:16px 24px;font-size:.78rem;color:var(--ink-3);border-top:1px solid var(--lav-deep);display:flex;gap:8px;align-items:center}
 .foot i{width:6px;height:6px;border-radius:50%;background:var(--pink);display:block}
@@ -303,6 +305,7 @@ tr:last-child td{border-bottom:0}
   .top{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));gap:10px}
   .top .overall{order:5;max-width:none;flex-basis:100%}
   .top .hide-m{display:none}
+  .top .theme-btn{margin-left:auto}
   .content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 100px}
   .foot{display:none}
   .g2,.g3{grid-template-columns:1fr}
@@ -337,6 +340,7 @@ tr:last-child td{border-bottom:0}
       <div class="overall"><div class="bar"><i id="ovBar" style="width:0"></i></div><span id="ovTxt">0% do plano</span></div>
       <div class="spacer hide-m"></div>
       <button class="btn ghost sm hide-m" id="goCrono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Cronograma</button>
+      <button class="icon-btn theme-btn" id="themeBtn"></button>
     </header>
     <main class="content" id="view" tabindex="-1"></main>
     <footer class="foot"><i></i><span id="footTxt">Carregando seus dados…</span></footer>
@@ -405,6 +409,8 @@ const ICONS = {
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
   file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
   out: '<path d="M9 21H5V3h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
 };
 const ic = (n, cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
 
@@ -709,6 +715,13 @@ document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go, g.dataset.week ? { week: g.dataset.week } : null); return; }
 });
 $("#goCrono").onclick = () => go("crono");
+
+/* tema: segue o aparelho até a pessoa escolher; a escolha fica neste navegador */
+const darkNow = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+function paintThemeBtn() { const d = darkNow(), b = $("#themeBtn"); b.innerHTML = ic(d ? "sun" : "moon"); b.title = b.ariaLabel = d ? "Usar tema claro" : "Usar tema escuro"; }
+$("#themeBtn").onclick = () => { const t = darkNow() ? "light" : "dark"; document.documentElement.dataset.theme = t; try { localStorage.setItem("central-estudos-tema", t); } catch (e) { } paintThemeBtn(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintThemeBtn);
+paintThemeBtn();
 
 /* ================= ajuda das abas ================= */
 /* Texto do botão "Entenda esta aba": para que serve a página, o que fazer nela e uma dica de uso */
@@ -1123,7 +1136,7 @@ function vDesempenho() {
 }
 
 /* ---------- Horas líquidas ---------- */
-let hDay = TODAY(), hScope = "semana", hView = "lista";
+let hDay = TODAY(), hWeek = "", hView = "lista"; // hWeek: "" = semana da data escolhida, "plano" = plano todo, ou o id de uma semana
 try { hView = localStorage.getItem("central-estudos-horas-visao") || "lista"; } catch (e) { }
 // horas previstas (conteúdos) × horas feitas (blocos) por disciplina, na semana escolhida ou no plano todo
 function hoursByDisc(w) {
@@ -1143,7 +1156,7 @@ function donut(p, label) {
 function hoursPies(w) {
   const rows = hoursByDisc(w), withPlan = rows.filter(x => x.plan), loose = rows.filter(x => !x.plan).reduce((a, x) => a + x.done, 0);
   const tp = withPlan.reduce((a, x) => a + x.plan, 0), td = withPlan.reduce((a, x) => a + Math.min(x.done, x.plan), 0);
-  const scope = `<div class="seg" role="group" aria-label="Período">${w ? `<button data-act="hscope" data-v="semana" aria-pressed="${hScope === "semana"}">${esc(w.nome)}</button>` : ""}<button data-act="hscope" data-v="plano" aria-pressed="${!w || hScope === "plano"}">Plano todo</button></div>`;
+  const scope = `<select id="hWeek" class="inp" aria-label="Período dos gráficos" style="width:auto;min-height:36px;padding:4px 10px">${opts([["plano", "Plano todo"], ...weeks().map(x => [x.id, x.nome + (x.inicio ? ` · ${fmtD(x.inicio)}–${fmtD(x.fim)}` : "")])], w ? w.id : "plano")}</select>`;
   const pies = withPlan.map(x => {
     const p = Math.min(100, x.done / x.plan * 100), falta = x.plan - x.done;
     return `<div class="pie"><h3>${esc(x.d)}</h3>${donut(p, `${x.d}: ${hm(x.done)} feitas de ${hm(x.plan)} previstas (${Math.round(p)}%)`)}
@@ -1167,7 +1180,7 @@ function vHoras() {
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
       <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
-    ${hView === "graficos" ? hoursPies(hScope === "semana" ? w : null) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
+    ${hView === "graficos" ? hoursPies(hWeek === "plano" ? null : get(hWeek) || w) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
       ${day.length ? `<div class="tbl-wrap"><table><thead><tr><th>Horário</th><th>Assunto</th><th class="n">Pausas</th><th class="n">Líquido</th><th></th></tr></thead><tbody>${day.map(s => { const c = get(s.contentId); return `<tr><td class="num">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}${s.almoco ? ' <span class="chip">almoço</span>' : ""}</td><td>${esc(c ? c.assunto : s.disciplina || "—")}</td><td class="n">${s.pausasMin || 0}m</td><td class="n"><b>${hm(sessionMin(s))}</b></td><td><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted small">Nenhum bloco neste dia. Registre início e término do estudo.</p>`}</div>
     <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`}`;
 }
@@ -1553,6 +1566,7 @@ function bindView() {
   on("#lfWeek", "change", e => { lf.week = e.target.value; render(); });
   on("#lfQ", "change", e => { lf.q = e.target.value; render(); });
   on("#hDay", "change", e => { hDay = e.target.value || TODAY(); render(); });
+  on("#hWeek", "change", e => { hWeek = e.target.value; render(); });
 }
 document.addEventListener("click", async e => {
   const a = e.target.closest("[data-act]"); if (!a) return;
@@ -1565,7 +1579,6 @@ document.addEventListener("click", async e => {
     case "edit-week": weekForm(get(id)); break;
     case "sel-week": selWeek = id; render(); break;
     case "hview": hView = a.dataset.v; try { localStorage.setItem("central-estudos-horas-visao", hView); } catch (er) { } render(); break;
-    case "hscope": hScope = a.dataset.v; render(); break;
     case "logout": closeDrawer(); await sb.auth.signOut({ scope: "local" }); cloudStop(); break;
     case "cloud-retry": cloudStart(S.user); break;
     case "local-send": sendLocal(a); break;
