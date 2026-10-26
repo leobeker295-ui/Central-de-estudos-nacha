@@ -268,19 +268,24 @@ tr:last-child td{border-bottom:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
-/* horas por disciplina: uma rosca por disciplina (feito × falta) */
-.pies{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
-.pie{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
-.pie h3{font-size:.9rem;min-height:2.6em;display:flex;align-items:center}
-.pie p{font-weight:600}
-.pie small{color:var(--ink-3);font-size:.8rem}
-.donut{width:140px;height:140px}
-.donut circle{fill:none;stroke-width:16}
-.donut-v{font-family:var(--f-display);font-weight:800;font-size:24px;fill:var(--ink)}
-.donut-l{font-size:11px;fill:var(--ink-3)}
-.pie-key{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)}
-.pie-key i{width:10px;height:10px;border-radius:3px;background:var(--pink);display:block}
-.pie-key.rest i{background:var(--line)}
+/* tempo realizado por disciplina: pizza única; --s1..--s8 = cor fixa de cada disciplina (paleta validada p/ daltonismo, claro e escuro) */
+:root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767}}
+:root[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767}
+.time-pie{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:center}
+.donut{width:100%;max-width:240px;height:auto;margin:0 auto;display:block}
+.donut circle{fill:none;stroke-width:44}
+.donut-v{font-family:var(--f-display);font-weight:800;font-size:26px;fill:var(--ink)}
+.donut-l{font-size:12px;fill:var(--ink-3)}
+.pie-leg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-width:560px;width:100%}
+.pie-leg li{display:grid;grid-template-columns:12px 1fr auto 44px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.pie-leg li:last-child{border-bottom:0}
+.pie-leg i{width:12px;height:12px;border-radius:3px;display:block}
+.pie-leg span{min-width:0;font-weight:600}
+.pie-leg small{display:block;font-weight:400;color:var(--ink-3);font-size:.76rem}
+.pie-leg b{font-weight:600}
+.pie-leg em{font-style:normal;color:var(--ink-2);text-align:right;font-size:.84rem}
+@media (max-width:860px){.time-pie{grid-template-columns:1fr;gap:16px}}
 .hb{display:grid;grid-template-columns:minmax(90px,160px) 1fr 54px;gap:10px;align-items:center;font-size:.85rem;padding:5px 0}
 .hb .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hb .bar{height:10px}
@@ -1145,27 +1150,23 @@ function hoursByDisc(w) {
   (w ? sessions().filter(s => sessionWeek(s) === w.id) : sessions()).forEach(s => { const c = get(s.contentId); row((c && c.disciplina) || s.disciplina || "Sem disciplina").done += sessionMin(s); });
   return [...m.values()].filter(x => x.plan || x.done);
 }
-function donut(p, label) {
-  const R = 52, C = 2 * Math.PI * R, gap = p > 0 && p < 100 ? 2 : 0;
-  const done = Math.max(0, C * p / 100 - gap), rest = Math.max(0, C * (100 - p) / 100 - gap);
-  return `<svg class="donut" viewBox="0 0 132 132" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 66 66)">
-    ${rest ? `<circle cx="66" cy="66" r="${R}" stroke="var(--line)" stroke-dasharray="${rest} ${C}" stroke-dashoffset="${-(C * p / 100 + gap / 2)}"><title>${esc(label)}</title></circle>` : ""}
-    ${done ? `<circle cx="66" cy="66" r="${R}" stroke="var(--pink)" stroke-dasharray="${done} ${C}" stroke-dashoffset="${-gap / 2}"><title>${esc(label)}</title></circle>` : ""}
-    </g><text x="66" y="67" text-anchor="middle" class="donut-v">${Math.round(p)}%</text><text x="66" y="86" text-anchor="middle" class="donut-l">feito</text></svg>`;
-}
-function hoursPies(w) {
-  const rows = hoursByDisc(w), withPlan = rows.filter(x => x.plan), loose = rows.filter(x => !x.plan).reduce((a, x) => a + x.done, 0);
-  const tp = withPlan.reduce((a, x) => a + x.plan, 0), td = withPlan.reduce((a, x) => a + Math.min(x.done, x.plan), 0);
-  const scope = `<select id="hWeek" class="inp" aria-label="Período dos gráficos" style="width:auto;min-height:36px;padding:4px 10px">${opts([["plano", "Plano todo"], ...weeks().map(x => [x.id, x.nome + (x.inicio ? ` · ${fmtD(x.inicio)}–${fmtD(x.fim)}` : "")])], w ? w.id : "plano")}</select>`;
-  const pies = withPlan.map(x => {
-    const p = Math.min(100, x.done / x.plan * 100), falta = x.plan - x.done;
-    return `<div class="pie"><h3>${esc(x.d)}</h3>${donut(p, `${x.d}: ${hm(x.done)} feitas de ${hm(x.plan)} previstas (${Math.round(p)}%)`)}
-      <p class="num">${hm(x.done)} de ${hm(x.plan)}</p><small>${falta > 0 ? "faltam " + hm(falta) : falta < 0 ? "meta superada em " + hm(-falta) : "meta cumprida"}</small></div>`;
-  }).join("");
-  return `<div class="card"><div class="card-h"><div><h2>Horas por disciplina</h2><p>${tp ? `${hm(td)} de ${hm(tp)} previstas · ${Math.round(td / tp * 100)}% feito` : "Sem horas previstas neste período"}</p></div>
-      <div class="row"><span class="pie-key"><i></i>feito</span><span class="pie-key rest"><i></i>falta</span>${scope}</div></div>
-    ${pies ? `<div class="pies">${pies}</div>` : `<p class="muted small">Nenhum conteúdo com horas previstas neste período.</p>`}
-    ${loose ? `<p class="small muted" style="margin-top:12px">${hm(loose)} registradas sem conteúdo nem disciplina ficam fora dos gráficos. Edite o bloco e escolha o conteúdo para que entrem na conta.</p>` : ""}</div>`;
+// pizza única: tempo realizado no período, dividido por disciplina (cor fixa por disciplina, na ordem do plano)
+function hoursPie(w) {
+  const discOf = x => { const c = get(x.contentId); return (c && c.disciplina) || x.disciplina || ""; };
+  const order = [...new Set([...contents().map(c => c.disciplina), ...sessions().map(discOf)].filter(Boolean))];
+  const rows = hoursByDisc(w).filter(x => x.done > 0).map(x => Object.assign(x, { i: order.indexOf(x.d) }))
+    .sort((a, b) => (a.i < 0) - (b.i < 0) || a.i - b.i);
+  const tot = rows.reduce((a, x) => a + x.done, 0), plan = hoursByDisc(w).reduce((a, x) => a + x.plan, 0);
+  const color = x => x.i >= 0 && x.i < 8 ? `var(--s${x.i + 1})` : "var(--ink-3)";
+  const name = x => x.i < 0 ? "Sem conteúdo vinculado" : x.d;
+  const R = 70, C = 2 * Math.PI * R, gap = rows.length > 1 ? 2 : 0; let acc = 0;
+  const arcs = rows.map(x => { const len = C * x.done / tot, a = `<circle cx="100" cy="100" r="${R}" stroke="${color(x)}" stroke-dasharray="${Math.max(0.5, len - gap)} ${C}" stroke-dashoffset="${-(acc + gap / 2)}"><title>${esc(name(x))}: ${hm(x.done)} (${Math.round(x.done / tot * 100)}%)</title></circle>`; acc += len; return a; }).join("");
+  const sel = `<select id="hWeek" class="inp" aria-label="Período do gráfico" style="width:auto;min-height:36px;padding:4px 10px">${opts([["plano", "Plano todo"], ...weeks().map(x => [x.id, x.nome + (x.inicio ? ` · ${fmtD(x.inicio)}–${fmtD(x.fim)}` : "")])], w ? w.id : "plano")}</select>`;
+  return `<div class="card"><div class="card-h"><div><h2>Tempo realizado por disciplina</h2><p>${tot ? `${hm(tot)} realizadas${plan ? ` · ${hm(plan)} previstas no período (${Math.round(tot / plan * 100)}%)` : ""}` : "Nenhuma hora registrada neste período"}</p></div>${sel}</div>
+    ${tot ? `<div class="time-pie"><svg class="donut" viewBox="0 0 200 200" role="img" aria-label="Tempo realizado: ${hm(tot)}, ${rows.map(x => `${name(x)} ${hm(x.done)}`).join(", ")}"><g transform="rotate(-90 100 100)">${arcs}</g>
+        <text x="100" y="104" text-anchor="middle" class="donut-v">${hm(tot)}</text><text x="100" y="124" text-anchor="middle" class="donut-l">realizadas</text></svg>
+      <ul class="pie-leg">${rows.map(x => `<li><i style="background:${color(x)}"></i><span>${esc(name(x))}${x.plan ? `<small>de ${hm(x.plan)} previstas</small>` : ""}</span><b class="num">${hm(x.done)}</b><em class="num">${Math.round(x.done / tot * 100)}%</em></li>`).join("")}</ul></div>`
+      : `<p class="muted small">Registre blocos de estudo (botão “Novo bloco”) para ver como o tempo se divide entre as disciplinas.</p>`}</div>`;
 }
 function vHoras() {
   const st = settings(); const meta = +st.metaDiaria || 0;
@@ -1180,7 +1181,7 @@ function vHoras() {
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
       <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
-    ${hView === "graficos" ? hoursPies(hWeek === "plano" ? null : get(hWeek) || w) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
+    ${hView === "graficos" ? hoursPie(hWeek === "plano" ? null : get(hWeek) || w) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
       ${day.length ? `<div class="tbl-wrap"><table><thead><tr><th>Horário</th><th>Assunto</th><th class="n">Pausas</th><th class="n">Líquido</th><th></th></tr></thead><tbody>${day.map(s => { const c = get(s.contentId); return `<tr><td class="num">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}${s.almoco ? ' <span class="chip">almoço</span>' : ""}</td><td>${esc(c ? c.assunto : s.disciplina || "—")}</td><td class="n">${s.pausasMin || 0}m</td><td class="n"><b>${hm(sessionMin(s))}</b></td><td><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted small">Nenhum bloco neste dia. Registre início e término do estudo.</p>`}</div>
     <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`}`;
 }
