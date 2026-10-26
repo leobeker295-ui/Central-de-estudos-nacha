@@ -264,6 +264,19 @@ tr:last-child td{border-bottom:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
+/* horas por disciplina: uma rosca por disciplina (feito × falta) */
+.pies{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.pie{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.pie h3{font-size:.9rem;min-height:2.6em;display:flex;align-items:center}
+.pie p{font-weight:600}
+.pie small{color:var(--ink-3);font-size:.8rem}
+.donut{width:140px;height:140px}
+.donut circle{fill:none;stroke-width:16}
+.donut-v{font-family:var(--f-display);font-weight:800;font-size:24px;fill:var(--ink)}
+.donut-l{font-size:11px;fill:var(--ink-3)}
+.pie-key{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)}
+.pie-key i{width:10px;height:10px;border-radius:3px;background:var(--pink);display:block}
+.pie-key.rest i{background:var(--line)}
 .hb{display:grid;grid-template-columns:minmax(90px,160px) 1fr 54px;gap:10px;align-items:center;font-size:.85rem;padding:5px 0}
 .hb .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hb .bar{height:10px}
@@ -1108,7 +1121,37 @@ function vDesempenho() {
 }
 
 /* ---------- Horas líquidas ---------- */
-let hDay = TODAY();
+let hDay = TODAY(), hScope = "semana", hView = "lista";
+try { hView = localStorage.getItem("central-estudos-horas-visao") || "lista"; } catch (e) { }
+// horas previstas (conteúdos) × horas feitas (blocos) por disciplina, na semana escolhida ou no plano todo
+function hoursByDisc(w) {
+  const m = new Map(), row = d => m.get(d) || m.set(d, { d, plan: 0, done: 0 }).get(d);
+  (w ? contentsOf(w.id) : contents()).forEach(c => row(c.disciplina || "Sem disciplina").plan += +c.planejadoMin || 0);
+  (w ? sessions().filter(s => sessionWeek(s) === w.id) : sessions()).forEach(s => { const c = get(s.contentId); row((c && c.disciplina) || s.disciplina || "Sem disciplina").done += sessionMin(s); });
+  return [...m.values()].filter(x => x.plan || x.done);
+}
+function donut(p, label) {
+  const R = 52, C = 2 * Math.PI * R, gap = p > 0 && p < 100 ? 2 : 0;
+  const done = Math.max(0, C * p / 100 - gap), rest = Math.max(0, C * (100 - p) / 100 - gap);
+  return `<svg class="donut" viewBox="0 0 132 132" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 66 66)">
+    ${rest ? `<circle cx="66" cy="66" r="${R}" stroke="var(--line)" stroke-dasharray="${rest} ${C}" stroke-dashoffset="${-(C * p / 100 + gap / 2)}"><title>${esc(label)}</title></circle>` : ""}
+    ${done ? `<circle cx="66" cy="66" r="${R}" stroke="var(--pink)" stroke-dasharray="${done} ${C}" stroke-dashoffset="${-gap / 2}"><title>${esc(label)}</title></circle>` : ""}
+    </g><text x="66" y="67" text-anchor="middle" class="donut-v">${Math.round(p)}%</text><text x="66" y="86" text-anchor="middle" class="donut-l">feito</text></svg>`;
+}
+function hoursPies(w) {
+  const rows = hoursByDisc(w), withPlan = rows.filter(x => x.plan), loose = rows.filter(x => !x.plan).reduce((a, x) => a + x.done, 0);
+  const tp = withPlan.reduce((a, x) => a + x.plan, 0), td = withPlan.reduce((a, x) => a + Math.min(x.done, x.plan), 0);
+  const scope = `<div class="seg" role="group" aria-label="Período">${w ? `<button data-act="hscope" data-v="semana" aria-pressed="${hScope === "semana"}">${esc(w.nome)}</button>` : ""}<button data-act="hscope" data-v="plano" aria-pressed="${!w || hScope === "plano"}">Plano todo</button></div>`;
+  const pies = withPlan.map(x => {
+    const p = Math.min(100, x.done / x.plan * 100), falta = x.plan - x.done;
+    return `<div class="pie"><h3>${esc(x.d)}</h3>${donut(p, `${x.d}: ${hm(x.done)} feitas de ${hm(x.plan)} previstas (${Math.round(p)}%)`)}
+      <p class="num">${hm(x.done)} de ${hm(x.plan)}</p><small>${falta > 0 ? "faltam " + hm(falta) : falta < 0 ? "meta superada em " + hm(-falta) : "meta cumprida"}</small></div>`;
+  }).join("");
+  return `<div class="card"><div class="card-h"><div><h2>Horas por disciplina</h2><p>${tp ? `${hm(td)} de ${hm(tp)} previstas · ${Math.round(td / tp * 100)}% feito` : "Sem horas previstas neste período"}</p></div>
+      <div class="row"><span class="pie-key"><i></i>feito</span><span class="pie-key rest"><i></i>falta</span>${scope}</div></div>
+    ${pies ? `<div class="pies">${pies}</div>` : `<p class="muted small">Nenhum conteúdo com horas previstas neste período.</p>`}
+    ${loose ? `<p class="small muted" style="margin-top:12px">${hm(loose)} registradas sem conteúdo nem disciplina ficam fora dos gráficos. Edite o bloco e escolha o conteúdo para que entrem na conta.</p>` : ""}</div>`;
+}
 function vHoras() {
   const st = settings(); const meta = +st.metaDiaria || 0;
   const day = sessions().filter(s => s.data === hDay);
@@ -1117,14 +1160,14 @@ function vHoras() {
   const wTot = w ? sessions().filter(s => sessionWeek(s) === w.id).reduce((a, s) => a + sessionMin(s), 0) : null;
   const last7 = [...Array(7)].map((_, i) => addDays(hDay, i - 6));
   return `<div class="page-h"><div><span class="eyebrow">Horas líquidas</span><h1>Controle de tempo</h1><p>Cada bloco desconta pausas e, se marcado, o almoço de ${st.almocoMin} min. Quem registra o almoço como pausa não marca o desconto, para não contar duas vezes.</p></div>
-    <div class="row"><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn primary" data-act="new-session">${ic("plus")}Novo bloco</button></div></div>
+    <div class="row"><div class="seg" role="group" aria-label="Visualização"><button data-act="hview" data-v="lista" aria-pressed="${hView === "lista"}">Lista</button><button data-act="hview" data-v="graficos" aria-pressed="${hView === "graficos"}">Gráficos</button></div><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn primary" data-act="new-session">${ic("plus")}Novo bloco</button></div></div>
     <div class="kpis"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
       <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
-    <div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
+    ${hView === "graficos" ? hoursPies(hScope === "semana" ? w : null) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
       ${day.length ? `<div class="tbl-wrap"><table><thead><tr><th>Horário</th><th>Assunto</th><th class="n">Pausas</th><th class="n">Líquido</th><th></th></tr></thead><tbody>${day.map(s => { const c = get(s.contentId); return `<tr><td class="num">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}${s.almoco ? ' <span class="chip">almoço</span>' : ""}</td><td>${esc(c ? c.assunto : s.disciplina || "—")}</td><td class="n">${s.pausasMin || 0}m</td><td class="n"><b>${hm(sessionMin(s))}</b></td><td><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted small">Nenhum bloco neste dia. Registre início e término do estudo.</p>`}</div>
-    <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`;
+    <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`}`;
 }
 function sessionForm(s = {}, ctx = {}) {
   const isNew = !s.id;
@@ -1519,6 +1562,8 @@ document.addEventListener("click", async e => {
     case "new-week": weekForm(); break;
     case "edit-week": weekForm(get(id)); break;
     case "sel-week": selWeek = id; render(); break;
+    case "hview": hView = a.dataset.v; try { localStorage.setItem("central-estudos-horas-visao", hView); } catch (er) { } render(); break;
+    case "hscope": hScope = a.dataset.v; render(); break;
     case "logout": closeDrawer(); await sb.auth.signOut({ scope: "local" }); cloudStop(); break;
     case "cloud-retry": cloudStart(S.user); break;
     case "local-send": sendLocal(a); break;
