@@ -384,6 +384,7 @@ const TODAY = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
 const fmtD = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "—";
 const fmtDY = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(0, 4) : "—";
+const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const hm = min => { min = Math.round(min || 0); const neg = min < 0; min = Math.abs(min); return (neg ? "−" : "") + Math.floor(min / 60) + "h" + pad(min % 60); };
 const hrs = min => ((min || 0) / 60).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 const pct1 = (a, b) => b > 0 ? (a / b * 100) : null;
@@ -940,7 +941,8 @@ function vSemanas() {
   const groups = {};
   cs.forEach(c => { const k = wGroup === "dia" ? (c.prevista || "Sem data") : (c.disciplina || "Sem disciplina"); (groups[k] = groups[k] || []).push(c); });
   const daySess = d => sessions().filter(x => x.data === d).reduce((a, x) => a + sessionMin(x), 0);
-  const gTitle = k => wGroup === "dia" && /^\d{4}-/.test(k) ? `${esc((groups[k][0].dia || "").replace("-feira", ""))} ${fmtD(k)}${daySess(k) ? ` <span class="chip pink" style="text-transform:none;letter-spacing:0">${hm(daySess(k))} estudadas</span>` : ""}` : esc(k);
+  // dia da semana calculado pela data (o "dia" que veio da planilha fica errado quando o conteúdo é remarcado)
+  const gTitle = k => wGroup === "dia" && /^\d{4}-/.test(k) ? `${WEEKDAYS[new Date(k + "T12:00:00").getDay()]} ${fmtD(k)}${k === TODAY() ? ` <span class="chip ok" style="text-transform:none;letter-spacing:0"><i></i>hoje</span>` : ""}${daySess(k) ? ` <span class="chip pink" style="text-transform:none;letter-spacing:0">${hm(daySess(k))} estudadas</span>` : ""}` : esc(k);
   const prev = ws[idx - 1], next = ws[idx + 1];
   const head = `<div class="card" style="display:flex;flex-direction:column;gap:14px">
     <div class="card-h" style="margin:0"><div><span class="eyebrow">Semana ${idx + 1} de ${ws.length}</span><h1>${esc(w.nome)}</h1><p>${w.inicio ? fmtDY(w.inicio) + " a " + fmtDY(w.fim) : "Período a definir"} · meta ${w.metaHoras ? w.metaHoras + "h" : "não definida"}</p></div>
