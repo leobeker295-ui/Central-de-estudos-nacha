@@ -268,6 +268,26 @@ tr:last-child td{border-bottom:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.kcol{background:var(--lav-deep);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:180px;border:2px dashed transparent;transition:border-color .15s,background .15s}
+.kcol.over{border-color:var(--pink);background:var(--pink-soft)}
+.kcol-h{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.kcol-h h2{font-size:1rem}
+.kcol-h .chip{margin-left:auto}
+.kcard{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:12px 12px 8px;display:flex;flex-direction:column;gap:4px;cursor:grab;border-left:4px solid var(--line)}
+.kcard:active{cursor:grabbing}
+.kcard.dragging{opacity:.45}
+.kcard b{font-size:.9rem;line-height:1.35}
+.kcard p{font-size:.8rem;color:var(--ink-2)}
+.kcard .kdate{color:var(--ink-3)}
+.kcard .kdate.late{color:var(--bad);font-weight:600}
+.kcard .kdate.today{color:var(--pink-ink);font-weight:600}
+.kmove{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:4px}
+.kmove .icon-btn{font-size:1.25rem;line-height:1;font-weight:700}
+.kempty{padding:8px 4px}
+@media (max-width:860px){.kanban{grid-template-columns:1fr}}
+
 /* tempo realizado por disciplina: pizza única; --s1..--s8 = cor fixa de cada disciplina (paleta validada p/ daltonismo, claro e escuro) */
 :root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767}}
@@ -423,6 +443,7 @@ const ic = (n, cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none"
 const ERR_CATS = ["Falta de conhecimento do conteúdo", "Esquecimento", "Interpretação equivocada", "Desatenção", "Confusão entre conceitos", "Dúvida sobre legislação", "Falta de tempo", "Outro"];
 const STATUS = { pendente: ["Pendente", "pend"], andamento: ["Em andamento", "and"], concluido: ["Concluído", "ok"] };
 const ESTATUS = { pendente: ["Pendente", "bad"], revisao: ["Em revisão", "and"], corrigido: ["Corrigido", "ok"] };
+const RSTATUS = { pendente: ["A fazer", "pend"], andamento: ["Em andamento", "and"], concluida: ["Concluída", "ok"] };
 
 /* ================= armazenamento ================= */
 const S = { docs: new Map(), mode: "loading", db: null, col: null, assets: null, downloads: null, ready: false };
@@ -749,12 +770,12 @@ const HELP = {
   },
   erros: {
     serve: "Transforma cada erro em aprendizado. Anotar o motivo mostra se o problema é conteúdo, atenção, interpretação ou tempo, e cada caso pede uma correção diferente.",
-    fazer: ["Errou uma questão? Clique em “Registrar erro” e anote ao menos o assunto e o motivo. O resto pode ser completado depois.", "Escreva com suas palavras a explicação da resposta correta e como vai corrigir a dificuldade.", "Preencha a “Próxima revisão” para a revisão ser criada automaticamente.", "Atualize o status conforme avança: Pendente → Em revisão → Corrigido."],
+    fazer: ["Errou uma questão? Clique em “Registrar erro” e anote ao menos o assunto e o motivo. O resto pode ser completado depois.", "Escreva com suas palavras a explicação da resposta correta e como vai corrigir a dificuldade.", "Preencha a “Próxima revisão” para a revisão ser criada automaticamente.", "Atualize o status conforme avança: Pendente → Em revisão → Corrigido.", "Prefere ver em colunas? Escolha “Kanban” no topo e arraste os cards entre os estágios (no celular, use os botões ‹ ›)."],
     dica: "Os gráficos “Assuntos com mais erros” e “Por motivo” mostram onde concentrar o reforço.",
   },
   revisoes: {
     serve: "Garante que você não esqueça o que já estudou. A revisão espaçada, em intervalos crescentes (por padrão 1, 7, 15 e 30 dias), fixa o conteúdo na memória de longo prazo.",
-    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes."],
+    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›)."],
     dica: "O número rosa no menu mostra quantas revisões vencem hoje ou estão atrasadas. Os intervalos mudam em “Configurar intervalos”.",
   },
   desempenho: {
@@ -900,7 +921,7 @@ function cItem(c) {
 function revItem(r) {
   const t = TODAY(); const late = r.status !== "concluida" && r.prevista && r.prevista < t;
   return `<div class="li"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
-    <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}</p></div>
+    <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
     ${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div>`;
 }
 
@@ -1008,6 +1029,42 @@ function showWeekSummary(wid) {
 }
 
 /* ---------- Caderno de erros ---------- */
+/* ---------- Kanban (alternativa à lista em Erros e Revisões) ---------- */
+const viewPref = k => { try { return localStorage.getItem("central-estudos-visao-" + k) || "lista"; } catch (e) { return "lista"; } };
+const VIEW = { erros: viewPref("erros"), revisoes: viewPref("revisoes") };
+const viewSeg = k => `<div class="seg" role="group" aria-label="Visualização"><button data-act="view" data-k="${k}" data-v="lista" aria-pressed="${VIEW[k] === "lista"}">Lista</button><button data-act="view" data-k="${k}" data-v="kanban" aria-pressed="${VIEW[k] === "kanban"}">Kanban</button></div>`;
+// cols: [{ k, title, cls, items, empty, more }]; card(item) devolve { stripe, body, open }
+function kanban(kind, cols, card) {
+  return `<div class="kanban">${cols.map((c, ci) => `<section class="kcol" data-kcol="${c.k}" data-kkind="${kind}" aria-label="${esc(c.title)}">
+    <div class="kcol-h"><h2>${c.title}</h2><span class="chip ${c.cls}">${c.items.length + (c.more || 0)}</span></div>
+    ${c.items.map(x => { const v = card(x), prev = cols[ci - 1], next = cols[ci + 1];
+      return `<article class="kcard" draggable="true" data-kid="${x.id}" data-kkind="${kind}" style="border-left-color:var(--${v.stripe})">${v.body}
+        <div class="kmove">${prev ? `<button class="icon-btn" data-act="kmove" data-kkind="${kind}" data-id="${x.id}" data-to="${prev.k}" aria-label="Mover para ${esc(prev.title)}" title="Mover para ${esc(prev.title)}">‹</button>` : "<span></span>"}
+          ${v.open}${next ? `<button class="icon-btn" data-act="kmove" data-kkind="${kind}" data-id="${x.id}" data-to="${next.k}" aria-label="Mover para ${esc(next.title)}" title="Mover para ${esc(next.title)}">›</button>` : "<span></span>"}</div></article>`; }).join("")
+      || `<p class="muted small kempty">${c.empty}</p>`}
+    ${c.more ? `<p class="muted small kempty">+ ${c.more} mais antiga${c.more === 1 ? "" : "s"}</p>` : ""}</section>`).join("")}</div>`;
+}
+async function kMove(kind, id, to) {
+  const x = get(id); if (!x || x.status === to) return;
+  if (kind === "error") {
+    await put(Object.assign({}, x, { status: to, historico: (x.historico || []).concat([{ em: new Date().toISOString(), de: ESTATUS[x.status || "pendente"][0], para: ESTATUS[to][0] }]) }));
+    toast("Erro movido para " + ESTATUS[to][0]);
+  } else {
+    await put(Object.assign({}, x, { status: to, concluidaEm: to === "concluida" ? x.concluidaEm || TODAY() : "" }));
+    toast(to === "concluida" ? "Revisão concluída. Abra o card para registrar como foi." : "Revisão movida para " + RSTATUS[to][0]);
+  }
+  render();
+}
+// arrastar e soltar (computador); no celular e pelo teclado ficam os botões ‹ ›
+document.addEventListener("dragstart", e => { const c = e.target.closest && e.target.closest(".kcard"); if (!c) return; e.dataTransfer.setData("text/plain", c.dataset.kkind + "|" + c.dataset.kid); e.dataTransfer.effectAllowed = "move"; c.classList.add("dragging"); });
+document.addEventListener("dragend", e => { const c = e.target.closest && e.target.closest(".kcard"); if (c) c.classList.remove("dragging"); document.querySelectorAll(".kcol.over").forEach(x => x.classList.remove("over")); });
+document.addEventListener("dragover", e => { const col = e.target.closest && e.target.closest(".kcol"); if (!col) return; e.preventDefault(); document.querySelectorAll(".kcol.over").forEach(x => x !== col && x.classList.remove("over")); col.classList.add("over"); });
+document.addEventListener("drop", e => {
+  const col = e.target.closest && e.target.closest(".kcol"); if (!col) return; e.preventDefault(); col.classList.remove("over");
+  const [kind, id] = (e.dataTransfer.getData("text/plain") || "").split("|");
+  if (kind === col.dataset.kkind && id) kMove(kind, id, col.dataset.kcol);
+});
+
 let ef = { disc: "", status: "", q: "", de: "", ate: "" };
 function errItem(e) {
   return `<div class="li"><div class="stripe ${e.status === "corrigido" ? "ok" : e.status === "revisao" ? "warn" : "bad"}"></div>
@@ -1017,13 +1074,18 @@ function errItem(e) {
     <button class="icon-btn" data-act="edit-error" data-id="${e.id}" aria-label="Editar">${ic("edit")}</button></div>`;
 }
 function vErros() {
-  const head = `<div class="page-h"><div><span class="eyebrow">Caderno de erros</span><h1>O que errei e como corrigir</h1><p>Registre rápido, complete depois. Nenhum campo é obrigatório.</p></div><button class="btn primary" data-act="new-error">${ic("plus")}Registrar erro</button></div>`;
+  const head = `<div class="page-h"><div><span class="eyebrow">Caderno de erros</span><h1>O que errei e como corrigir</h1><p>Registre rápido, complete depois. Nenhum campo é obrigatório.</p></div><div class="row">${viewSeg("erros")}<button class="btn primary" data-act="new-error">${ic("plus")}Registrar erro</button></div></div>`;
   const es = errors();
   if (!es.length) return head + `<div class="card">${empty("err", "Nenhum erro registrado", "Quando errar uma questão, anote aqui o motivo e a explicação certa. Os assuntos com mais erros aparecem destacados para revisão.", `<button class="btn primary" data-act="new-error">Registrar o primeiro erro</button>`)}</div>`;
-  const list = es.filter(e => (!ef.disc || e.disciplina === ef.disc) && (!ef.status || e.status === ef.status) && (!ef.q || ((e.assunto || "") + " " + (e.enunciado || "")).toLowerCase().includes(ef.q.toLowerCase())) && (!ef.de || e.data >= ef.de) && (!ef.ate || e.data <= ef.ate));
+  const list = es.filter(e => (!ef.disc || e.disciplina === ef.disc) && (!ef.status || VIEW.erros === "kanban" || e.status === ef.status) && (!ef.q || ((e.assunto || "") + " " + (e.enunciado || "")).toLowerCase().includes(ef.q.toLowerCase())) && (!ef.de || e.data >= ef.de) && (!ef.ate || e.data <= ef.ate));
   const top = bySubject().filter(s => s.erros).sort((a, b) => b.erros - a.erros).slice(0, 6);
   const maxE = Math.max(1, ...top.map(t => t.erros));
   const cats = ERR_CATS.map(c => ({ l: c, n: es.filter(e => e.categoria === c).length })).filter(c => c.n);
+  if (VIEW.erros === "kanban") return head + `<div class="filters"><select id="efDisc">${opts(disciplinas(), ef.disc, "Todas as disciplinas")}</select><input id="efQ" placeholder="Buscar assunto" value="${esc(ef.q)}"><input type="date" id="efDe" value="${ef.de}" aria-label="De"><input type="date" id="efAte" value="${ef.ate}" aria-label="Até"></div>`
+    + kanban("error", Object.entries(ESTATUS).map(([k, v]) => ({ k, title: v[0], cls: v[1], items: list.filter(e => (e.status || "pendente") === k), empty: "Nenhum erro aqui." })), e => ({
+      stripe: { pendente: "bad", revisao: "warn", corrigido: "ok" }[e.status || "pendente"],
+      body: `<b>${esc(e.assunto || "Assunto não informado")}</b><p>${esc(e.disciplina || "—")} · ${fmtD(e.data)}${e.categoria ? " · " + esc(e.categoria) : ""}</p>`,
+      open: `<button class="btn sm ghost" data-act="edit-error" data-id="${e.id}">Abrir</button>` }));
   return head + `<div class="grid g2">
     <div class="card"><div class="card-h"><h2>Assuntos com mais erros</h2></div>${hbars(top.map(t => ({ l: t.assunto, p: t.erros / maxE * 100, v: t.erros })))}</div>
     <div class="card"><div class="card-h"><h2>Por motivo</h2><p>${es.filter(e => e.status !== "corrigido").length} ainda sem correção</p></div>${cats.length ? hbars(cats.map(c => ({ l: c.l, p: c.n / es.length * 100, v: c.n }))) : `<p class="muted small">Classifique o motivo dos erros para ver o padrão.</p>`}</div></div>
@@ -1071,17 +1133,27 @@ function errorForm(e = {}, ctx = {}) {
 function vRevisoes() {
   const t = TODAY(); const rs = reviews(); const st = settings();
   const head = `<div class="page-h"><div><span class="eyebrow">Revisões</span><h1>Hora de revisar</h1><p>Crie revisões a partir de erros, conteúdos concluídos ou de qualquer assunto. Intervalos atuais: ${esc(st.intervalos)} dias.</p></div>
-    <div class="row"><button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
+    <div class="row">${viewSeg("revisoes")}<button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
   const today = rs.filter(r => r.status !== "concluida" && r.prevista === t);
   const late = rs.filter(r => r.status !== "concluida" && r.prevista && r.prevista < t);
   const fut = rs.filter(r => r.status !== "concluida" && (!r.prevista || r.prevista > t));
-  const done = rs.filter(r => r.status === "concluida").sort((a, b) => (b.concluidaEm || "").localeCompare(a.concluidaEm || "")).slice(0, 8);
+  const allDone = rs.filter(r => r.status === "concluida").sort((a, b) => (b.concluidaEm || "").localeCompare(a.concluidaEm || "")), done = allDone.slice(0, 8);
   const sug = reinforce();
   const grp = (title, arr, emptyTxt, cls) => `<div class="card"><div class="card-h"><h2>${title}</h2><span class="chip ${cls}">${arr.length}</span></div>${arr.length ? `<div class="list">${arr.map(revItem).join("")}</div>` : `<p class="muted small">${emptyTxt}</p>`}</div>`;
-  return head + (sug.length ? `<div class="card"><div class="card-h"><div><h2>Sugestões de reforço</h2><p>Assuntos com acerto abaixo de 70% ou erros recorrentes. O cronograma não é alterado.</p></div></div>
-    <div class="list">${sug.map(s => `<div class="li"><div class="stripe warn"></div><div class="body"><b>${esc(s.assunto)}</b><p>${esc(s.disciplina)} · ${s.qr ? fmtPct(pct1(s.qc, s.qr)) + " de acerto" : "sem questões"} · ${s.erros} erro${s.erros === 1 ? "" : "s"}</p></div><button class="btn sm ghost" data-act="sug-review" data-a="${esc(s.assunto)}" data-d="${esc(s.disciplina)}">Agendar revisão</button></div>`).join("")}</div></div>` : "")
-    + `<div class="grid g3">${grp("Atrasadas", late, "Nenhuma revisão atrasada.", "bad")}${grp("Para hoje", today, "Nada previsto para hoje.", "pink")}${grp("Futuras", fut, "Nenhuma revisão agendada.", "")}</div>`
-    + (done.length ? `<div class="card"><div class="card-h"><h2>Concluídas recentemente</h2></div><div class="list">${done.map(revItem).join("")}</div></div>` : "");
+  const sugHTML = (sug.length ? `<div class="card"><div class="card-h"><div><h2>Sugestões de reforço</h2><p>Assuntos com acerto abaixo de 70% ou erros recorrentes. O cronograma não é alterado.</p></div></div>
+    <div class="list">${sug.map(s => `<div class="li"><div class="stripe warn"></div><div class="body"><b>${esc(s.assunto)}</b><p>${esc(s.disciplina)} · ${s.qr ? fmtPct(pct1(s.qc, s.qr)) + " de acerto" : "sem questões"} · ${s.erros} erro${s.erros === 1 ? "" : "s"}</p></div><button class="btn sm ghost" data-act="sug-review" data-a="${esc(s.assunto)}" data-d="${esc(s.disciplina)}">Agendar revisão</button></div>`).join("")}</div></div>` : "");
+  return head + (VIEW.revisoes === "kanban" ? "" : sugHTML)
+    + (VIEW.revisoes === "kanban" ? kanban("review", [
+        { k: "pendente", title: "A fazer", cls: "pend", items: rs.filter(r => (r.status || "pendente") === "pendente"), empty: "Nenhuma revisão a fazer." },
+        { k: "andamento", title: "Em andamento", cls: "and", items: rs.filter(r => r.status === "andamento"), empty: "Arraste para cá a revisão que você começou." },
+        { k: "concluida", title: "Concluída", cls: "ok", items: allDone.slice(0, 20), more: Math.max(0, allDone.length - 20), empty: "Nenhuma revisão concluída ainda." },
+      ], r => {
+        const late = r.status !== "concluida" && r.prevista && r.prevista < t;
+        return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status === "andamento" ? "warn" : "line",
+          body: `<b>${esc(r.assunto || "Assunto")}</b><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
+          open: `<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button>` };
+      }) : `<div class="grid g3">${grp("Atrasadas", late, "Nenhuma revisão atrasada.", "bad")}${grp("Para hoje", today, "Nada previsto para hoje.", "pink")}${grp("Futuras", fut, "Nenhuma revisão agendada.", "")}</div>`)
+    + (done.length && VIEW.revisoes !== "kanban" ? `<div class="card"><div class="card-h"><h2>Concluídas recentemente</h2></div><div class="list">${done.map(revItem).join("")}</div></div>` : "") + (VIEW.revisoes === "kanban" ? sugHTML : "");
 }
 function reviewForm(pre = {}) {
   const cOpts = contents().map(x => [x.id, (x.disciplina ? x.disciplina + " · " : "") + x.assunto]);
@@ -1581,6 +1653,8 @@ document.addEventListener("click", async e => {
     case "new-week": weekForm(); break;
     case "edit-week": weekForm(get(id)); break;
     case "sel-week": selWeek = id; render(); break;
+    case "view": VIEW[a.dataset.k] = a.dataset.v; try { localStorage.setItem("central-estudos-visao-" + a.dataset.k, a.dataset.v); } catch (er) { } render(); break;
+    case "kmove": kMove(a.dataset.kkind, id, a.dataset.to); break;
     case "hview": hView = a.dataset.v; try { localStorage.setItem("central-estudos-horas-visao", hView); } catch (er) { } render(); break;
     case "logout": closeDrawer(); await sb.auth.signOut({ scope: "local" }); cloudStop(); break;
     case "cloud-retry": cloudStart(S.user); break;
