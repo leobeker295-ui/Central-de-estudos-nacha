@@ -268,6 +268,28 @@ tr:last-child td{border-bottom:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
+/* lembretes: post-its */
+:root{--pi-amarelo:#FFF3B0;--pi-rosa:#FFDDEE;--pi-azul:#DCEBFF;--pi-verde:#DDF3E3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pi-amarelo:#4A4120;--pi-rosa:#4A2440;--pi-azul:#20344F;--pi-verde:#1E3A2E}}
+:root[data-theme="dark"]{--pi-amarelo:#4A4120;--pi-rosa:#4A2440;--pi-azul:#20344F;--pi-verde:#1E3A2E}
+.postits{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.postit{background:var(--pi-amarelo);color:var(--ink);border-radius:4px 4px 14px 4px;padding:14px 14px 10px;min-height:130px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(45,36,56,.08),0 8px 18px rgba(45,36,56,.10)}
+.postit.pi-rosa{background:var(--pi-rosa)} .postit.pi-azul{background:var(--pi-azul)} .postit.pi-verde{background:var(--pi-verde)}
+.postit.feito{opacity:.6}
+.postit.feito .pi-txt{text-decoration:line-through;text-decoration-color:var(--pink)}
+.pi-txt{flex:1;white-space:pre-wrap;overflow-wrap:anywhere;font-weight:500;cursor:pointer;line-height:1.4}
+.pi-txt:hover{text-decoration:underline;text-decoration-color:var(--ink-3)}
+.pi-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pi-when{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:var(--ink-2);font-weight:600}
+.pi-when svg{width:13px;height:13px}
+.pi-when.late{color:var(--bad)} .pi-when.today{color:var(--pink-ink)}
+.postit .check .ring{stroke:var(--ink-2)}
+.pi-cores{border:0;padding:0;margin:0}
+.pi-sw{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;cursor:pointer;font-size:.85rem;font-weight:600;border:2px solid transparent;background:var(--pi-amarelo)}
+.pi-sw.pi-rosa{background:var(--pi-rosa)} .pi-sw.pi-azul{background:var(--pi-azul)} .pi-sw.pi-verde{background:var(--pi-verde)}
+.pi-sw:has(input:checked){border-color:var(--pink)}
+.pi-sw input{accent-color:var(--pink);margin:0}
+
 /* kanban */
 .kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
 .kcol{background:var(--lav-deep);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:180px;border:2px dashed transparent;transition:border-color .15s,background .15s}
@@ -435,6 +457,7 @@ const ICONS = {
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
   file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
   out: '<path d="M9 21H5V3h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  note: '<path d="M4 4h16v10l-6 6H4z"/><path d="M14 20v-6h6"/><path d="M8 9h8M8 13h4"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
 };
@@ -600,6 +623,8 @@ const errors = () => all("error").sort((a, b) => (b.data || "").localeCompare(a.
 const reviews = () => all("review").sort((a, b) => (a.prevista || "").localeCompare(b.prevista || ""));
 const materials = () => all("material");
 const closingOf = wid => all("closing").find(c => c.weekId === wid);
+const reminders = () => all("reminder").sort((a, b) => (a.data || "").localeCompare(b.data || ""));
+const remindersDue = () => reminders().filter(r => !r.feito && r.data && r.data <= TODAY()).length;
 
 function sessionMin(s) {
   if (s.minutosManuais != null && s.minutosManuais !== "") return Math.max(0, +s.minutosManuais);
@@ -729,14 +754,14 @@ const hbars = rows => rows.map(r => `<div class="hb"><span class="lbl" title="${
 const VIEWS = [
   ["visao", "Visão geral", "home"], ["crono", "Meu cronograma", "cal"], ["semanas", "Semanas de estudo", "weeks"],
   ["erros", "Caderno de erros", "err"], ["revisoes", "Revisões", "rev"], ["desempenho", "Desempenho por disciplina", "perf"],
-  ["horas", "Horas líquidas", "clock"], ["biblioteca", "Biblioteca de materiais", "lib"], ["fechamentos", "Fechamentos semanais", "close"],
+  ["horas", "Horas líquidas", "clock"], ["biblioteca", "Biblioteca de materiais", "lib"], ["fechamentos", "Fechamentos semanais", "close"], ["lembretes", "Lembretes", "note"],
 ];
 let route = "visao", selWeek = null;
 try { const h = location.hash.slice(1); if (VIEWS.some(v => v[0] === h)) route = h; } catch (e) { }
 function go(r, opt) { route = r; if (opt && opt.week) selWeek = opt.week; closeDrawer(); render(); window.scrollTo(0, 0); }
 function navHTML(list) {
-  const due = reviews().filter(r => r.status !== "concluida" && r.prevista && r.prevista <= TODAY()).length;
-  return list.map(([k, l, i]) => `<button data-go="${k}" ${route === k ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span>${k === "revisoes" && due ? `<span class="count">${due}</span>` : ""}</button>`).join("");
+  const due = { revisoes: reviews().filter(r => r.status !== "concluida" && r.prevista && r.prevista <= TODAY()).length, lembretes: remindersDue() };
+  return list.map(([k, l, i]) => `<button data-go="${k}" ${route === k ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span>${due[k] ? `<span class="count">${due[k]}</span>` : ""}</button>`).join("");
 }
 document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go, g.dataset.week ? { week: g.dataset.week } : null); return; }
@@ -798,6 +823,11 @@ const HELP = {
     fazer: ["Finalize cada semana na aba Semanas de estudo, na seção “Fechamento da semana”.", "Aqui, compare os gráficos e a tabela. Clique em “Ver resumo” para reler o fechamento de uma semana.", "Use o que aprendeu para definir as prioridades da semana seguinte."],
     dica: "Cada métrica aparece separada de propósito: mais horas não significam, sozinhas, melhor desempenho.",
   },
+  lembretes: {
+    serve: "É o seu bloco de post-its: recados com data para não esquecer o que precisa ser feito (inscrição, pagamento, entregar um material, revisar um ponto específico…).",
+    fazer: ["Clique em “Novo lembrete”, escreva o recado, escolha a data e uma cor.", "Os atrasados e os de hoje aparecem primeiro, e também no topo da Visão geral.", "Quando terminar, clique no check do post-it para marcar como feito. Para mudar o texto ou a data, clique no recado.", "Os concluídos ficam guardados no fim da página e podem ser reabertos."],
+    dica: "O número rosa ao lado de “Lembretes” no menu mostra quantos vencem hoje ou estão atrasados.",
+  },
 };
 const helpHTML = r => { const h = HELP[r]; return `<div class="help"><button type="button" class="help-btn" aria-describedby="help-${r}">${ic("q")}<span>Entenda esta aba</span></button>
   <div class="help-pop" id="help-${r}" role="tooltip"><span class="eyebrow">Para que serve</span><p>${h.serve}</p><span class="eyebrow">O que fazer aqui</span><ol>${h.fazer.map(f => `<li>${f}</li>`).join("")}</ol><p class="help-tip"><b>Dica:</b> ${h.dica}</p></div></div>`; };
@@ -835,7 +865,7 @@ function render() {
   if (S.mode === "offline") { $("#view").innerHTML = `<div class="card">${empty("spark", "Não consegui abrir seus registros", "A conexão com a nuvem falhou. Verifique a internet e tente de novo.", `<button class="btn primary" data-act="cloud-retry">Tentar de novo</button>`)}</div>`; return; }
   if (!S.ready) { $("#view").innerHTML = `<div class="card">${empty("spark", "Abrindo sua central", "Buscando seus registros…")}</div>`; return; }
   const pend = localPending().length;
-  const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, fechamentos: vFechamentos }[route];
+  const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, fechamentos: vFechamentos, lembretes: vLembretes }[route];
   const pl = settings().plano; $(".side .brand small").textContent = pl ? "Prefeitura de Curitiba" : "Concurso público";
   $("#view").innerHTML = (S.mode === "local" ? localBanner() : "") + (pend ? sendBanner(pend) : "") + (!settings().planoImportado && !pend ? planBanner() : "") + (hasExample() ? exampleBanner() : "") + v();
   const eb = $("#view .page-h .eyebrow");
@@ -892,7 +922,7 @@ function vVisao() {
   </div>`;
   return `<div class="page-h"><div><span class="eyebrow">Visão geral</span><h1>${greeting()}</h1><p>${cw ? `Você está na ${esc(cw.nome)}. ${weekStats(cw.id).pend + weekStats(cw.id).and} conteúdos em aberto nesta semana.` : ""}</p></div>
     <div class="row"><button class="btn ghost" data-act="new-session">${ic("clock")}Registrar horas</button><button class="btn primary" data-act="new-error">${ic("plus")}Registrar erro</button></div></div>
-    ${kpis}${steps}${charts}`;
+    ${homeReminders()}${kpis}${steps}${charts}`;
 }
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Bom dia, bons estudos" : h < 18 ? "Boa tarde, bons estudos" : "Boa noite, bons estudos"; };
 
@@ -1311,6 +1341,56 @@ function vBiblioteca() {
     + (Object.entries(groups).map(([d, arr]) => `<div class="card"><div class="card-h"><h2>${esc(d)}</h2><span class="chip">${arr.length}</span></div><div class="list">${arr.map(matItem).join("")}</div></div>`).join("") || `<div class="card"><p class="muted">Nenhum material com esses filtros.</p></div>`);
 }
 
+/* ---------- Lembretes (post-its com data) ---------- */
+const PCORES = { amarelo: "Amarelo", rosa: "Rosa", azul: "Azul", verde: "Verde" };
+function postit(r) {
+  const t = TODAY(), late = !r.feito && r.data < t, quando = r.feito ? `feito em ${fmtD(r.feitoEm)}` : late ? `atrasado · ${fmtD(r.data)}` : r.data === t ? "hoje" : r.data === addDays(t, 1) ? "amanhã" : `${WEEKDAYS[new Date(r.data + "T12:00:00").getDay()].toLowerCase()} · ${fmtD(r.data)}`;
+  return `<article class="postit pi-${PCORES[r.cor] ? r.cor : "amarelo"} ${r.feito ? "feito" : ""}">
+    <p class="pi-txt" data-act="edit-reminder" data-id="${r.id}" title="Editar">${esc(r.texto || "Lembrete sem texto")}</p>
+    <div class="pi-foot"><span class="pi-when ${late ? "late" : !r.feito && r.data === t ? "today" : ""}">${ic("cal")}${quando}</span>
+      <button class="check ${r.feito ? "on no-anim" : ""}" data-act="toggle-reminder" data-id="${r.id}" aria-pressed="${!!r.feito}" aria-label="${r.feito ? "Reabrir" : "Marcar como feito"}: ${esc(r.texto)}">${checkSVG()}</button></div></article>`;
+}
+function homeReminders() {
+  const t = TODAY(), lim = addDays(t, 7), open = reminders().filter(r => !r.feito);
+  const show = open.filter(r => r.data <= lim), later = open.length - show.length;
+  return `<div class="card"><div class="card-h"><div><h2>Lembretes</h2><p>${show.length ? "Atrasados, de hoje e dos próximos 7 dias" : "Nada para os próximos 7 dias"}${later ? ` · mais ${later} depois` : ""}</p></div>
+    <div class="row"><button class="btn sm ghost" data-go="lembretes">Ver todos</button><button class="btn sm primary" data-act="new-reminder">${ic("plus")}Lembrete</button></div></div>
+    ${show.length ? `<div class="postits">${show.slice(0, 8).map(postit).join("")}</div>${show.length > 8 ? `<p class="small muted" style="margin-top:10px">E mais ${show.length - 8} nesta semana. <button class="linkbtn" data-go="lembretes">Ver todos</button></p>` : ""}` : `<p class="muted small">Crie um lembrete para não esquecer prazos e tarefas.</p>`}</div>`;
+}
+function vLembretes() {
+  const t = TODAY(), rs = reminders(), open = rs.filter(r => !r.feito);
+  const grp = (title, arr, cls) => arr.length ? `<div class="card"><div class="card-h"><h2>${title}</h2><span class="chip ${cls}">${arr.length}</span></div><div class="postits">${arr.map(postit).join("")}</div></div>` : "";
+  const done = rs.filter(r => r.feito).sort((a, b) => (b.feitoEm || "").localeCompare(a.feitoEm || ""));
+  const head = `<div class="page-h"><div><span class="eyebrow">Lembretes</span><h1>Para não esquecer</h1><p>Recados com data, como post-its. Os atrasados e os de hoje também aparecem na Visão geral.</p></div><button class="btn primary" data-act="new-reminder">${ic("plus")}Novo lembrete</button></div>`;
+  if (!rs.length) return head + `<div class="card">${empty("note", "Nenhum lembrete ainda", "Anote prazos, tarefas e recados com uma data. Eles aparecem aqui e no topo da Visão geral até você marcar como feitos.", `<button class="btn primary" data-act="new-reminder">Criar o primeiro lembrete</button>`)}</div>`;
+  return head + (open.length ? "" : `<div class="card"><p class="muted">Tudo em dia: nenhum lembrete em aberto.</p></div>`)
+    + grp("Atrasados", open.filter(r => r.data < t), "bad") + grp("Hoje", open.filter(r => r.data === t), "pink") + grp("Próximos", open.filter(r => r.data > t), "")
+    + (done.length ? `<div class="card"><details><summary class="card-h" style="margin:0;cursor:pointer"><h2>Concluídos</h2><span class="row" style="gap:8px"><span class="chip ok">${done.length}</span><span class="small muted">mostrar / esconder</span></span></summary><div class="postits" style="margin-top:14px">${done.slice(0, 24).map(postit).join("")}</div></details></div>` : "");
+}
+function reminderForm(r = {}) {
+  const isNew = !r.id, cor = PCORES[r.cor] ? r.cor : "amarelo";
+  openDrawer(isNew ? "Novo lembrete" : "Editar lembrete", `<form class="form" id="rmForm" style="grid-template-columns:1fr">
+    ${fld("Lembrete", `<textarea name="texto" id="rm-t" rows="4" placeholder="Ex.: Pagar a inscrição do concurso">${esc(r.texto)}</textarea>`)}
+    ${fld("Data", `<input type="date" name="data" id="rm-d" value="${r.data || TODAY()}">`)}
+    <fieldset class="fld pi-cores"><span>Cor</span><div class="row">${Object.entries(PCORES).map(([k, l]) => `<label class="pi-sw pi-${k}"><input type="radio" name="cor" value="${k}" ${k === cor ? "checked" : ""}><span>${l}</span></label>`).join("")}</div></fieldset>
+  </form>`, `${!isNew ? `<button class="btn danger" id="rmDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="rmCancel">Cancelar</button><button class="btn primary" id="rmSave">Salvar lembrete</button>`);
+  $("#rm-t").focus();
+  $("#rmCancel").onclick = closeDrawer;
+  if (!isNew) $("#rmDel").onclick = async () => { if (await confirmBox("Excluir este lembrete?", "Ele sai da lista e da Visão geral.")) { await del(r.id); closeDrawer(); toast("Lembrete excluído"); render(); } };
+  $("#rmSave").onclick = async () => {
+    const texto = $("#rm-t").value.trim(), data = $("#rm-d").value, cor = ($("#rmForm [name=cor]:checked") || {}).value || "amarelo";
+    if (!texto) { toast("Escreva o lembrete"); return; }
+    if (!data) { toast("Escolha a data do lembrete"); return; }
+    await put(Object.assign({}, r, { id: r.id || uid("lb"), kind: "reminder", texto, data, cor, feito: !!r.feito }));
+    closeDrawer(); toast("Lembrete salvo"); render();
+  };
+}
+async function toggleReminder(id) {
+  const r = get(id); if (!r) return;
+  await put(Object.assign({}, r, { feito: !r.feito, feitoEm: r.feito ? "" : TODAY() }));
+  toast(r.feito ? "Lembrete reaberto" : "Lembrete feito"); render();
+}
+
 /* ---------- Fechamentos / histórico ---------- */
 function vFechamentos() {
   const ws = weeks();
@@ -1655,6 +1735,9 @@ document.addEventListener("click", async e => {
     case "sel-week": selWeek = id; render(); break;
     case "view": VIEW[a.dataset.k] = a.dataset.v; try { localStorage.setItem("central-estudos-visao-" + a.dataset.k, a.dataset.v); } catch (er) { } render(); break;
     case "kmove": kMove(a.dataset.kkind, id, a.dataset.to); break;
+    case "new-reminder": reminderForm(); break;
+    case "edit-reminder": reminderForm(get(id)); break;
+    case "toggle-reminder": e.preventDefault(); toggleReminder(id); break;
     case "hview": hView = a.dataset.v; try { localStorage.setItem("central-estudos-horas-visao", hView); } catch (er) { } render(); break;
     case "logout": closeDrawer(); await sb.auth.signOut({ scope: "local" }); cloudStop(); break;
     case "cloud-retry": cloudStart(S.user); break;
