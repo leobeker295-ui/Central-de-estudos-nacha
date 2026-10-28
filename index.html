@@ -73,7 +73,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .top .spacer{flex:1}
 .mob-brand{display:none}
 .theme-btn{flex:none}
-.content{padding-block:24px 60px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;max-width:1240px;width:100%}
+.content{padding-block:24px 60px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;max-width:1600px;width:100%;margin-inline:auto}
 .foot{margin-top:auto;padding:16px 24px;font-size:.78rem;color:var(--ink-3);border-top:1px solid var(--lav-deep);display:flex;gap:8px;align-items:center}
 .foot i{width:6px;height:6px;border-radius:50%;background:var(--pink);display:block}
 
@@ -142,7 +142,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .chip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
 
 /* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+/* Visão geral: o card de conclusão ocupa duas linhas e os outros 7 fecham as linhas (6 colunas na tela larga, 4 na média), sem card sobrando */
+@media (min-width:861px){.kpis.home{grid-template-columns:repeat(4,minmax(0,1fr))}.kpis.home .kpi.lead{grid-row:span 2}.kpis.home .kpi:last-child{grid-column:span 2}}
+@media (min-width:1280px){.kpis.home{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* Horas líquidas: card do dia (largo) + 3 cards numa linha só a partir da tela média */
+@media (min-width:861px){.kpis.horas{grid-template-columns:repeat(5,minmax(0,1fr))}}
+/* celular (2 colunas): se o último card ficaria sozinho, ele ocupa a linha inteira */
+@media (max-width:860px){.kpis .kpi.lead ~ .kpi:last-child:nth-child(even){grid-column:1/-1}}
 .kpi{background:var(--white);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;min-width:0}
 .kpi label{font-size:.75rem;color:var(--ink-3);font-weight:600;letter-spacing:.02em}
 .kpi b{font-family:var(--f-display);font-size:1.6rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -941,7 +948,7 @@ function vVisao() {
   const o = overall(); const t = TODAY();
   const revPend = reviews().filter(r => r.status !== "concluida").length;
   const k = (l, b, s) => `<div class="kpi"><label>${l}</label><b>${b}</b>${s ? `<small>${s}</small>` : ""}</div>`;
-  const kpis = `<div class="kpis">
+  const kpis = `<div class="kpis home">
     <div class="kpi lead"><label>Conclusão do planejamento</label><b class="num">${Math.round(o.pct)}%</b><small>${o.done} de ${o.total} conteúdos concluídos</small>${bar(o.pct)}</div>
     ${k("Em andamento", o.and, "conteúdos abertos")}
     ${k("Pendentes", o.pend, "ainda não iniciados")}
@@ -1335,7 +1342,7 @@ function vHoras() {
   const last7 = [...Array(7)].map((_, i) => addDays(hDay, i - 6));
   return `<div class="page-h"><div><span class="eyebrow">Horas líquidas</span><h1>Controle de tempo</h1><p>Cada bloco desconta pausas e, se marcado, o almoço de ${st.almocoMin} min. Quem registra o almoço como pausa não marca o desconto, para não contar duas vezes.</p></div>
     <div class="row"><div class="seg" role="group" aria-label="Visualização"><button data-act="hview" data-v="lista" aria-pressed="${hView === "lista"}">Lista</button><button data-act="hview" data-v="graficos" aria-pressed="${hView === "graficos"}">Gráficos</button></div><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn primary" data-act="new-session">${ic("plus")}Novo bloco</button></div></div>
-    <div class="kpis"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
+    <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
       <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
