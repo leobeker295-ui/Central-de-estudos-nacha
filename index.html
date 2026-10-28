@@ -278,6 +278,32 @@ tr:last-child td{border-bottom:0}
 .chart .gl{stroke:var(--line);stroke-width:1}
 .rv-box{background:var(--field);border-radius:12px;padding:12px}
 
+/* simulados e alternativas do erro */
+.alt-box{display:flex;flex-direction:column;gap:6px;background:var(--field);border-radius:12px;padding:12px}
+.alt-h{font-size:.78rem;font-weight:600;color:var(--ink-2)} .alt-h small{font-weight:400;color:var(--ink-3)}
+.alt-row{display:grid;grid-template-columns:auto 18px 1fr;gap:8px;align-items:center}
+.alt-row input[type=radio]{accent-color:var(--pink);width:18px;height:18px;margin:0}
+.alt-row input:not([type]){min-height:36px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--white);width:100%}
+.sim-form{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sim-q{display:flex;flex-direction:column;gap:14px}
+.sim-enun{font-size:1.02rem;line-height:1.6;white-space:pre-line;font-weight:500}
+.sim-alts{display:flex;flex-direction:column;gap:8px}
+.sim-alt{all:unset;cursor:pointer;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--white);line-height:1.45}
+.sim-alt b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--field);font-size:.85rem}
+.sim-alt:hover:not([disabled]){border-color:var(--pink)}
+.sim-alt:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.sim-alt.sel{border-color:var(--pink);background:var(--pink-soft)} .sim-alt.sel b{background:var(--pink);color:#fff}
+.sim-alt.certa{border-color:var(--ok);background:var(--ok-soft)} .sim-alt.certa b{background:var(--ok);color:#fff}
+.sim-alt.errada{border-color:var(--bad);background:var(--bad-soft)} .sim-alt.errada b{background:var(--bad);color:#fff}
+.sim-alt[disabled]{cursor:default}
+.sim-fb{border-radius:12px;padding:12px 14px;background:var(--field);display:flex;flex-direction:column;gap:6px;line-height:1.5}
+.sim-fb.ok{background:var(--ok-soft)} .sim-fb.ok > b{color:var(--ok)}
+.sim-fb.bad{background:var(--bad-soft)} .sim-fb.bad > b{color:var(--bad)}
+.sim-score{display:flex;flex-direction:column;gap:10px}
+.sim-score > div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sim-score b{font-family:var(--f-display);font-size:2.4rem;font-weight:800}
+@media (max-width:860px){.sim-form{grid-template-columns:1fr}}
+
 /* mapas mentais */
 .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
 .mapcard{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
@@ -509,6 +535,7 @@ const ICONS = {
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
   file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
   out: '<path d="M9 21H5V3h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  quiz: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 12.5 2 2 4-4.5"/>',
   map: '<circle cx="12" cy="12" r="3"/><circle cx="4" cy="5" r="2"/><circle cx="20" cy="5" r="2"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="19" r="2"/><path d="m5.5 6.5 4 3.5M18.5 6.5l-4 3.5M5.5 17.5l4-3.5M18.5 17.5l-4-3.5"/>',
   note: '<path d="M4 4h16v10l-6 6H4z"/><path d="M14 20v-6h6"/><path d="M8 9h8M8 13h4"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
@@ -809,7 +836,7 @@ const hbars = rows => rows.map(r => `<div class="hb"><span class="lbl" title="${
 /* ================= navegação ================= */
 const VIEWS = [
   ["visao", "Visão geral", "home"], ["crono", "Meu cronograma", "cal"], ["semanas", "Semanas de estudo", "weeks"],
-  ["erros", "Caderno de erros", "err"], ["revisoes", "Revisões", "rev"], ["desempenho", "Desempenho por disciplina", "perf"],
+  ["erros", "Caderno de erros", "err"], ["simulados", "Simulados", "quiz"], ["revisoes", "Revisões", "rev"], ["desempenho", "Desempenho por disciplina", "perf"],
   ["horas", "Horas líquidas", "clock"], ["biblioteca", "Biblioteca de materiais", "lib"], ["mapas", "Mapas mentais", "map"], ["fechamentos", "Fechamentos semanais", "close"], ["lembretes", "Lembretes", "note"],
 ];
 let route = "visao", selWeek = null;
@@ -851,7 +878,7 @@ const HELP = {
   },
   erros: {
     serve: "Transforma cada erro em aprendizado. Anotar o motivo mostra se o problema é conteúdo, atenção, interpretação ou tempo, e cada caso pede uma correção diferente.",
-    fazer: ["Errou uma questão? Clique em “Registrar erro” e anote ao menos o assunto e o motivo. O resto pode ser completado depois.", "Escreva com suas palavras a explicação da resposta correta e como vai corrigir a dificuldade.", "Preencha a “Próxima revisão” para a revisão ser criada automaticamente.", "Atualize o status conforme avança: Pendente → Em revisão → Corrigido.", "Prefere ver em colunas? Escolha “Kanban” no topo e arraste os cards entre os estágios (no celular, use os botões ‹ ›)."],
+    fazer: ["Errou uma questão? Clique em “Registrar erro” e anote ao menos o assunto e o motivo. O resto pode ser completado depois.", "Escreva com suas palavras a explicação da resposta correta e como vai corrigir a dificuldade.", "Preencha a “Próxima revisão” para a revisão ser criada automaticamente.", "Atualize o status conforme avança: Pendente → Em revisão → Corrigido.", "Cadastre as alternativas (A a E) e marque a correta: o erro vira questão de múltipla escolha na aba Simulados.", "Prefere ver em colunas? Escolha “Kanban” no topo e arraste os cards entre os estágios (no celular, use os botões ‹ ›)."],
     dica: "Os gráficos “Assuntos com mais erros” e “Por motivo” mostram onde concentrar o reforço.",
   },
   revisoes: {
@@ -870,14 +897,20 @@ const HELP = {
     dica: "Vincule o bloco a um conteúdo para as horas aparecerem nele e na semana certa.",
   },
   biblioteca: {
-    serve: "Reúne num só lugar os links e arquivos de estudo (resumos, PDFs, Google Docs, vídeos), organizados por disciplina e semana.",
-    fazer: ["Para adicionar, abra um conteúdo nas Semanas ou no Cronograma e use a área “Material de estudo”.", "Aqui, use os filtros ou a busca para achar um material e clique em “Abrir material”."],
-    dica: "Endereços de arquivos do seu computador (file:///…) não abrem pela web. Anexe o arquivo a um conteúdo ou suba para o Google Drive.",
+    serve: "Reúne num só lugar os links de estudo (resumos, PDFs online, Google Docs, vídeos, sites), organizados por disciplina, semana e Links úteis.",
+    fazer: ["Clique em “Novo material”, dê um nome, cole o link e escolha onde ele aparece: Links úteis, um conteúdo do cronograma, uma disciplina ou uma semana.", "Para corrigir um nome, trocar o link ou mudar o material de lugar, clique no lápis ao lado dele. Lá também dá para excluir.", "Use os filtros ou a busca para achar um material e clique em “Abrir material”.", "Dentro de cada conteúdo, a área “Material de estudo” também inclui links ligados a ele."],
+    dica: "Endereços de arquivos do seu computador (file:///…) não abrem pela web. Suba o arquivo para o Google Drive e inclua o link.",
   },
+
   fechamentos: {
     serve: "Compara as semanas lado a lado (horas × meta, questões, acertos e conteúdos concluídos) para você enxergar sua evolução e ajustar o plano.",
     fazer: ["Finalize cada semana na aba Semanas de estudo, na seção “Fechamento da semana”.", "Aqui, compare os gráficos e a tabela. Clique em “Ver resumo” para reler o fechamento de uma semana.", "Use o que aprendeu para definir as prioridades da semana seguinte."],
     dica: "Cada métrica aparece separada de propósito: mais horas não significam, sozinhas, melhor desempenho.",
+  },
+  simulados: {
+    serve: "Transforma o Caderno de erros em prova: as questões que você errou voltam embaralhadas para você ver se agora acerta.",
+    fazer: ["Escolha a disciplina, quais erros entram (por padrão, os ainda não corrigidos) e quantas questões, e clique em “Começar simulado”.", "Com alternativas cadastradas no erro, clique na alternativa e confirme: a correção é automática. Sem alternativas, escreva sua resposta, clique em “Ver resposta” e marque se acertou.", "No resultado, os erros que se repetiram voltam para “Em revisão” e ganham uma revisão por erros para amanhã. Os acertados podem ser marcados como corrigidos.", "Acompanhe a evolução dos acertos no histórico."],
+    dica: "Só entram no simulado os erros com o enunciado preenchido. Quanto mais alternativas cadastradas, mais o simulado parece com a prova.",
   },
   mapas: {
     serve: "Guarda os seus mapas mentais como imagem, prontos para revisar: clique na miniatura e o mapa abre em tela cheia, com zoom para ler cada ramo.",
@@ -926,7 +959,7 @@ function render() {
   if (S.mode === "offline") { $("#view").innerHTML = `<div class="card">${empty("spark", "Não consegui abrir seus registros", "A conexão com a nuvem falhou. Verifique a internet e tente de novo.", `<button class="btn primary" data-act="cloud-retry">Tentar de novo</button>`)}</div>`; return; }
   if (!S.ready) { $("#view").innerHTML = `<div class="card">${empty("spark", "Abrindo sua central", "Buscando seus registros…")}</div>`; return; }
   const pend = localPending().length;
-  const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, mapas: vMapas, fechamentos: vFechamentos, lembretes: vLembretes }[route];
+  const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, simulados: vSimulados, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, mapas: vMapas, fechamentos: vFechamentos, lembretes: vLembretes }[route];
   const pl = settings().plano; $(".side .brand small").textContent = pl ? "Prefeitura de Curitiba" : "Concurso público";
   $("#view").innerHTML = (S.mode === "local" ? localBanner() : "") + (pend ? sendBanner(pend) : "") + (!settings().planoImportado && !pend ? planBanner() : "") + (hasExample() ? exampleBanner() : "") + v();
   const eb = $("#view .page-h .eyebrow");
@@ -1196,6 +1229,9 @@ function errorForm(e = {}, ctx = {}) {
     ${fld("Enunciado ou resumo", `<textarea name="enunciado" id="ef-en">${esc(e.enunciado)}</textarea>`, "full")}
     ${fld("Resposta escolhida", `<input name="escolhida" id="ef-es" value="${esc(e.escolhida)}">`)}
     ${fld("Resposta correta", `<input name="correta" id="ef-co" value="${esc(e.correta)}">`)}
+    <div class="full alt-box"><span class="alt-h">Alternativas <small>(opcional · com elas, o erro vira questão de múltipla escolha no simulado)</small></span>
+      ${LETRAS.map(L => `<label class="alt-row"><input type="radio" name="efGab" value="${L}" ${gab0(e) === L ? "checked" : ""} aria-label="Alternativa ${L} é a correta"><b>${L}</b><input id="ef-a${L}" value="${esc((e.alternativas || {})[L])}" placeholder="Texto da alternativa ${L}"></label>`).join("")}
+      <small class="hint">Marque a bolinha da alternativa correta (o gabarito).</small></div>
     ${fld("Motivo do erro", `<select name="categoria" id="ef-cat">${opts(ERR_CATS, e.categoria || "", "Selecione")}</select>`)}
     ${fld("Status", `<select name="status" id="ef-st">${opts(Object.entries(ESTATUS).map(([k, v]) => [k, v[0]]), e.status || "pendente")}</select>`)}
     ${fld("Explicação da resposta correta", `<textarea name="explicacao" id="ef-ex">${esc(e.explicacao)}</textarea>`, "full")}
@@ -1209,7 +1245,10 @@ function errorForm(e = {}, ctx = {}) {
   $("#efCancel").onclick = closeDrawer;
   if (!isNew) $("#efDel").onclick = async () => { if (await confirmBox("Excluir este erro?", "O registro e seu histórico serão apagados. Revisões criadas a partir dele continuam na lista.")) { await del(e.id); closeDrawer(); toast("Erro excluído"); render(); } };
   $("#efSave").onclick = async () => {
-    const f = form($("#errForm")); const rec = Object.assign({}, e, f, { kind: "error" });
+    const f = form($("#errForm")); delete f.efGab;
+    const alts = Object.fromEntries(LETRAS.map(L => [L, $("#ef-a" + L).value.trim()]).filter(x => x[1])), gab = ($("#errForm [name=efGab]:checked") || {}).value || "";
+    if (Object.keys(alts).length && (!gab || !alts[gab])) { toast(gab ? "A alternativa marcada como correta está vazia" : "Marque qual alternativa é a correta"); return; }
+    const rec = Object.assign({}, e, f, { kind: "error", alternativas: Object.keys(alts).length ? alts : null, gabarito: Object.keys(alts).length ? gab : "" });
     if (!rec.id) { rec.id = uid("er"); rec.criadoEm = new Date().toISOString(); }
     if (e.status && e.status !== f.status) rec.historico = (e.historico || []).concat([{ em: new Date().toISOString(), de: ESTATUS[e.status][0], para: ESTATUS[f.status][0] }]);
     await put(rec);
@@ -1218,6 +1257,92 @@ function errorForm(e = {}, ctx = {}) {
     }
     closeDrawer(); toast("Erro salvo"); render();
   };
+}
+
+/* ---------- Simulados (questões montadas a partir do Caderno de erros) ---------- */
+const LETRAS = ["A", "B", "C", "D", "E"];
+const gab0 = e => e.gabarito || ((e.correta || "").match(/^\s*([A-E])\s*[)\.\-:]/i) || [])[1]?.toUpperCase() || "";
+const isMC = e => !!(e.gabarito && e.alternativas && e.alternativas[e.gabarito] && Object.values(e.alternativas).filter(Boolean).length >= 2);
+const simulados = () => all("simulado").sort((a, b) => (b.feitoEm || "").localeCompare(a.feitoEm || ""));
+let SIM = null, sf = { disc: "", fonte: "abertos", qtd: "10" };
+const simPool = () => errors().filter(e => (e.enunciado || "").trim() && (!sf.disc || e.disciplina === sf.disc) && (sf.fonte === "todos" || e.status !== "corrigido"));
+function simStart() {
+  const pool = simPool().map(e => e.id), n = sf.qtd === "todas" ? pool.length : Math.min(+sf.qtd, pool.length);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  SIM = { ids: pool.slice(0, n), i: 0, resp: [], sel: null, ver: false, txt: "", disc: sf.disc, fim: null }; render(); window.scrollTo(0, 0);
+}
+async function simAnswer(escolha, acertou) { SIM.resp[SIM.i] = { id: SIM.ids[SIM.i], escolha, acertou }; render(); }
+async function simNext() {
+  SIM.i++; SIM.sel = null; SIM.ver = false; SIM.txt = "";
+  if (SIM.i < SIM.ids.length) { render(); window.scrollTo(0, 0); return; }
+  // fim: guarda o resultado; quem errou de novo volta para "Em revisão" e ganha revisão por erros para amanhã
+  const acertos = SIM.resp.filter(r => r.acertou).length, rec = { id: uid("sm"), kind: "simulado", feitoEm: new Date().toISOString(), data: TODAY(), disciplina: SIM.disc, total: SIM.resp.length, acertos, itens: SIM.resp };
+  await put(rec); let novas = 0;
+  for (const r of SIM.resp.filter(r => !r.acertou)) {
+    const e = get(r.id); if (!e) continue;
+    if (e.status !== "revisao") await put(Object.assign({}, e, { status: "revisao", historico: (e.historico || []).concat([{ em: new Date().toISOString(), de: ESTATUS[e.status || "pendente"][0], para: ESTATUS.revisao[0] + " (simulado)" }]) }));
+    if (!reviews().some(v => v.status !== "concluida" && v.assunto === e.assunto)) { await put({ id: uid("rv"), kind: "review", assunto: e.assunto, disciplina: e.disciplina, prevista: addDays(TODAY(), 1), motivo: "Errou no simulado", tipo: "erros", origem: "simulado", origemId: e.id, status: "pendente" }); novas++; }
+  }
+  SIM.fim = { simId: rec.id, novas }; render(); window.scrollTo(0, 0);
+}
+async function simFixAcertos() {
+  let n = 0;
+  for (const r of SIM.resp.filter(r => r.acertou)) { const e = get(r.id); if (e && e.status !== "corrigido") { await put(Object.assign({}, e, { status: "corrigido", historico: (e.historico || []).concat([{ em: new Date().toISOString(), de: ESTATUS[e.status || "pendente"][0], para: ESTATUS.corrigido[0] + " (simulado)" }]) })); n++; } }
+  toast(n ? n + (n === 1 ? " erro marcado" : " erros marcados") + " como corrigido" : "Os erros acertados já estavam corrigidos"); render();
+}
+function vSimulados() {
+  const head = `<div class="page-h"><div><span class="eyebrow">Simulados</span><h1>Teste o que você errou</h1><p>As questões vêm do Caderno de erros. Com alternativas cadastradas, a correção é automática; sem elas, você confere a resposta e marca se acertou.</p></div></div>`;
+  if (SIM && SIM.fim) return head + simResult();
+  if (SIM) return head + simQuestion();
+  const comEnun = errors().filter(e => (e.enunciado || "").trim()), semEnun = errors().length - comEnun.length;
+  if (!comEnun.length) return head + `<div class="card">${empty("quiz", "Nenhuma questão disponível ainda", "O simulado usa os erros que têm o enunciado preenchido. Registre erros no Caderno de erros com o enunciado (e, se quiser, as alternativas) para montar simulados.", `<button class="btn primary" data-go="erros">Ir para o Caderno de erros</button>`)}</div>` + simHistory();
+  const pool = simPool(), n = sf.qtd === "todas" ? pool.length : Math.min(+sf.qtd, pool.length), mc = pool.filter(isMC).length;
+  const discs = [...new Set(comEnun.map(e => e.disciplina).filter(Boolean))].sort();
+  return head + `<div class="card"><div class="card-h"><div><h2>Montar simulado</h2><p>Questões em ordem aleatória, uma de cada vez.</p></div></div>
+    <div class="form sim-form">
+      ${fld("Disciplina", `<select id="sfDisc">${opts(discs, sf.disc, "Todas as disciplinas")}</select>`)}
+      ${fld("Quais erros", `<select id="sfFonte">${opts([["abertos", "Ainda não corrigidos"], ["todos", "Todos os erros"]], sf.fonte)}</select>`)}
+      ${fld("Questões", `<select id="sfQtd">${opts([["5", "5 questões"], ["10", "10 questões"], ["20", "20 questões"], ["todas", "Todas"]], sf.qtd)}</select>`)}
+    </div>
+    <div class="row" style="margin-top:16px"><button class="btn primary" data-act="sim-start" ${n ? "" : "disabled"}>${ic("quiz")}${n ? `Começar simulado · ${n} ${n === 1 ? "questão" : "questões"}` : "Nenhuma questão com esses filtros"}</button>
+      <span class="small muted">${pool.length} disponíve${pool.length === 1 ? "l" : "is"} · ${mc} de múltipla escolha${semEnun ? ` · ${semEnun} erro${semEnun === 1 ? "" : "s"} sem enunciado fica${semEnun === 1 ? "" : "m"} de fora` : ""}</span></div></div>` + simHistory();
+}
+function simQuestion() {
+  const e = get(SIM.ids[SIM.i]), n = SIM.ids.length, r = SIM.resp[SIM.i];
+  if (!e) { SIM.resp[SIM.i] = { id: SIM.ids[SIM.i], escolha: "", acertou: false }; return `<div class="card"><p class="muted">Este erro foi excluído.</p><button class="btn primary" data-act="sim-next">Próxima</button></div>`; }
+  const mc = isMC(e), alts = mc ? LETRAS.filter(L => e.alternativas[L]) : [];
+  const fb = r ? `<div class="sim-fb ${r.acertou ? "ok" : "bad"}"><b>${r.acertou ? "✓ Você acertou" : "✗ Não foi dessa vez"}</b>
+      ${!mc || !r.acertou ? `<p><span class="muted">Resposta correta:</span> ${esc(mc ? e.gabarito + ") " + e.alternativas[e.gabarito] : e.correta || "não registrada")}</p>` : ""}
+      ${e.explicacao ? `<p><span class="muted">Explicação:</span> ${esc(e.explicacao)}</p>` : ""}
+      ${e.escolhida ? `<p class="small muted">Da primeira vez você tinha respondido: ${esc(e.escolhida)}</p>` : ""}</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="sim-next">${SIM.i + 1 < n ? "Próxima questão" : "Ver resultado"}</button></div>` : "";
+  let body;
+  if (mc) body = `<div class="sim-alts" role="radiogroup" aria-label="Alternativas">${alts.map(L => {
+      const cls = r ? (L === e.gabarito ? "certa" : L === r.escolha ? "errada" : "") : SIM.sel === L ? "sel" : "";
+      return `<button class="sim-alt ${cls}" data-act="sim-pick" data-l="${L}" role="radio" aria-checked="${(r ? r.escolha : SIM.sel) === L}" ${r ? "disabled" : ""}><b>${L}</b><span>${esc(e.alternativas[L])}</span></button>`; }).join("")}</div>
+    ${r ? fb : `<div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="sim-confirm" ${SIM.sel ? "" : "disabled"}>Confirmar resposta</button></div>`}`;
+  else body = r ? (SIM.txt ? `<p class="small"><span class="muted">Sua resposta:</span> ${esc(SIM.txt)}</p>` : "") + fb
+    : !SIM.ver ? `<label class="fld"><span>Sua resposta (opcional)</span><textarea id="sim-txt" rows="3" placeholder="Escreva o que você responderia…">${esc(SIM.txt)}</textarea></label>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="sim-show">Ver resposta</button></div>`
+    : `${SIM.txt ? `<p class="small"><span class="muted">Sua resposta:</span> ${esc(SIM.txt)}</p>` : ""}<div class="sim-fb"><p><span class="muted">Resposta correta:</span> ${esc(e.correta || "não registrada")}</p>${e.explicacao ? `<p><span class="muted">Explicação:</span> ${esc(e.explicacao)}</p>` : ""}</div>
+      <div class="row" style="justify-content:flex-end"><span class="small muted" style="margin-right:auto">Você acertou?</span><button class="btn danger" data-act="sim-self" data-ok="0">Errei</button><button class="btn primary" data-act="sim-self" data-ok="1">Acertei</button></div>`;
+  return `<div class="card sim-q"><div class="card-h" style="margin-bottom:10px"><div><span class="eyebrow">Questão ${SIM.i + 1} de ${n}${mc ? "" : " · autocorreção"}</span><p>${esc([e.disciplina, e.assunto].filter(Boolean).join(" · "))}</p></div><button class="btn sm ghost" data-act="sim-quit">Encerrar</button></div>
+    ${bar(SIM.i / n * 100)}
+    <p class="sim-enun">${esc(e.enunciado)}</p>${body}</div>`;
+}
+function simResult() {
+  const tot = SIM.resp.length, ok = SIM.resp.filter(r => r.acertou).length, pend = SIM.resp.filter(r => r.acertou && get(r.id) && get(r.id).status !== "corrigido").length, err = tot - ok;
+  return `<div class="card"><div class="sim-score"><div><span class="eyebrow">Resultado</span><b class="num">${ok}/${tot}</b><span>${fmtPct(pct1(ok, tot))} de acertos</span></div>${bar(pct1(ok, tot))}</div>
+    <div class="list" style="margin-top:16px">${SIM.resp.map((r, i) => { const e = get(r.id) || {}; return `<div class="li"><div class="stripe ${r.acertou ? "ok" : "bad"}"></div><div class="body"><b>${i + 1}. ${esc(e.assunto || "Erro excluído")}</b><p>${r.acertou ? "Acertou" : "Errou"}${e.disciplina ? " · " + esc(e.disciplina) : ""}</p></div></div>`; }).join("")}</div>
+    ${err ? `<p class="small muted" style="margin-top:12px">${err === 1 ? "O erro que se repetiu voltou" : `Os ${err} erros que se repetiram voltaram`} para “Em revisão”${SIM.fim.novas ? ` e ${SIM.fim.novas === 1 ? "ganhou uma revisão por erros" : `ganharam ${SIM.fim.novas} revisões por erros`} para amanhã` : " (já havia revisão aberta para o assunto)"}.</p>` : ""}
+    <div class="row" style="margin-top:16px;justify-content:flex-end">${pend ? `<button class="btn ghost" data-act="sim-fix">Marcar os ${pend} acertados como corrigidos</button>` : ""}<button class="btn primary" data-act="sim-new">Novo simulado</button></div></div>` + simHistory();
+}
+function simHistory() {
+  const hs = simulados(); if (!hs.length) return "";
+  const last = hs.slice(0, 10).reverse();
+  return `<div class="grid g2">${hs.length > 1 ? `<div class="card"><div class="card-h"><h2>Evolução dos acertos</h2><p>últimos simulados · linha tracejada = 70%</p></div>${lineChart(last.map(h => fmtD(h.data)), last.map(h => pct1(h.acertos, h.total)))}</div>` : ""}
+    <div class="card"><div class="card-h"><h2>Simulados feitos</h2><span class="chip">${hs.length}</span></div><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Disciplina</th><th class="n">Acertos</th><th class="n">%</th></tr></thead><tbody>
+      ${hs.slice(0, 15).map(h => `<tr><td class="num">${fmtD(h.data)}</td><td>${esc(h.disciplina || "Todas")}</td><td class="n">${h.acertos}/${h.total}</td><td class="n"><span class="chip ${pct1(h.acertos, h.total) >= 80 ? "ok" : pct1(h.acertos, h.total) >= 70 ? "and" : "bad"}">${fmtPct(pct1(h.acertos, h.total))}</span></td></tr>`).join("")}</tbody></table></div></div></div>`;
 }
 
 /* ---------- Revisões ---------- */
@@ -1387,22 +1512,58 @@ function sessionForm(s = {}, ctx = {}) {
 /* ---------- Biblioteca ---------- */
 let lf = { disc: "", week: "", q: "" };
 const matLabel = m => m.arquivo ? ((m.nome || "").split(".").pop() || "ARQ").slice(0, 4).toUpperCase() : ({ "Google Docs": "DOC", "Google Sheets": "XLS", "Google Drive": "DRV", "Vídeo": "VID", "PDF online": "PDF" }[m.tipo] || "URL");
-function matItem(m) {
+function matItem(m, editavel) {
   const c = get(m.contentId); const web = /^https?:\/\//.test(m.url || "");
   const ctx = c ? " · " + esc(c.assunto) : m.data ? " · dia " + fmtD(m.data) : m.weekId && get(m.weekId) ? " · " + esc(get(m.weekId).nome) : "";
   return `<div class="mat"><div class="ico">${esc(web ? matLabel(m) : "PC")}</div><div class="info"><b title="${esc(m.nome)}">${esc(m.nome || "Material")}</b><small>${esc(m.tipo || (m.arquivo ? "Arquivo" : "Link"))}${ctx}${m.tamanho ? " · " + Math.round(m.tamanho / 1024) + " KB" : ""}</small>${web ? "" : `<small style="display:block;color:var(--warn)">Endereço de arquivo no seu computador: não abre pela web. Anexe o arquivo a um conteúdo ou suba para o Drive.</small>`}</div>
     ${web ? `<a class="btn sm primary" href="${esc(m.url)}" target="_blank" rel="noopener">${ic("ext")}Abrir material</a>` : ""}
-    ${m.arquivo ? `<button class="icon-btn" data-act="dl-mat" data-id="${m.id}" aria-label="Baixar">${ic("dl")}</button>` : ""}</div>`;
+    ${m.arquivo ? `<button class="icon-btn" data-act="dl-mat" data-id="${m.id}" aria-label="Baixar">${ic("dl")}</button>` : ""}${editavel ? `<button class="icon-btn" data-act="edit-mat" data-id="${m.id}" aria-label="Editar material" title="Editar">${ic("edit")}</button>` : ""}</div>`;
+}
+// material incluído à mão (ou editado): link + onde aparece (Links úteis, conteúdo, disciplina ou semana)
+const MTIPOS = ["Google Docs", "Google Sheets", "Google Drive", "PDF online", "Vídeo", "Site", "Outro"];
+function materialForm(m = {}) {
+  const isNew = !m.id, v0 = m.contentId ? "conteudo" : m.weekId && !m.geral ? "semana" : m.disciplina ? "disciplina" : "geral";
+  const cOpts = contents().map(x => [x.id, (x.disciplina ? x.disciplina + " · " : "") + x.assunto]);
+  openDrawer(isNew ? "Novo material" : "Editar material", `<form class="form" id="mtForm">
+    ${fld("Nome do material", `<input id="mt-n" value="${esc(m.nome)}" placeholder="Ex.: Resumo de atos administrativos">`, "full")}
+    ${fld("Tipo", `<select id="mt-t">${opts(MTIPOS, MTIPOS.includes(m.tipo) ? m.tipo : isNew ? "Google Docs" : "Outro")}</select>`)}
+    ${fld("Onde aparece", `<select id="mt-v">${opts([["geral", "Links úteis"], ["conteudo", "Num conteúdo do cronograma"], ["disciplina", "Numa disciplina"], ["semana", "Numa semana"]], v0)}</select>`)}
+    ${m.arquivo ? `<p class="full small muted">Arquivo anexado: o endereço não pode ser trocado aqui.</p>` : fld("Link (URL)", `<input id="mt-u" type="url" inputmode="url" value="${esc(m.url)}" placeholder="https://docs.google.com/…">`, "full", "Documentos privados do Google só abrem para quem tem permissão.")}
+    <div class="full" data-mv="conteudo">${fld("Conteúdo", `<select id="mt-c">${opts(cOpts, m.contentId || "", "Escolha o conteúdo")}</select>`)}</div>
+    <div class="full" data-mv="disciplina">${fld("Disciplina", `<input id="mt-d" list="dlDisc6" value="${esc(m.disciplina || (get(m.contentId) || {}).disciplina || "")}">`)}<datalist id="dlDisc6">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist></div>
+    <div class="full" data-mv="semana">${fld("Semana", `<select id="mt-w">${opts(weeks().map(w => [w.id, w.nome]), m.weekId || (currentWeek() || {}).id || "")}</select>`)}</div>
+  </form>`, `${!isNew ? `<button class="btn danger" id="mtDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="mtCancel">Cancelar</button><button class="btn primary" id="mtSave">Salvar material</button>`);
+  const showV = () => document.querySelectorAll("#mtForm [data-mv]").forEach(x => x.hidden = x.dataset.mv !== $("#mt-v").value);
+  $("#mt-v").onchange = showV; showV(); $("#mt-n").focus();
+  $("#mtCancel").onclick = closeDrawer;
+  if (!isNew) $("#mtDel").onclick = async () => {
+    if (!await confirmBox("Excluir este material?", "Ele sai da Biblioteca e do conteúdo a que estiver ligado.")) return;
+    if (m.arquivo && m.assetId && S.assets) { try { await S.assets.delete(m.assetId); } catch (e) { } }
+    await del(m.id); closeDrawer(); toast("Material excluído"); render();
+  };
+  $("#mtSave").onclick = async () => {
+    const nome = $("#mt-n").value.trim(), v = $("#mt-v").value; let url = m.arquivo ? m.url : $("#mt-u").value.trim();
+    if (!m.arquivo && url && !/^https?:\/\//i.test(url)) url = "https://" + url.replace(/^\/+/, "");
+    if (!nome) { toast("Dê um nome ao material"); return; }
+    if (!m.arquivo && !/^https?:\/\/\S+\.\S+/i.test(url)) { toast("Informe um link válido (https://…)"); return; }
+    if (v === "conteudo" && !$("#mt-c").value) { toast("Escolha o conteúdo"); return; }
+    if (v === "disciplina" && !$("#mt-d").value.trim()) { toast("Informe a disciplina"); return; }
+    if (v === "semana" && !$("#mt-w").value) { toast("Escolha a semana"); return; }
+    await put(Object.assign({}, m, { id: m.id || uid("mt"), kind: "material", nome, tipo: $("#mt-t").value, url, arquivo: !!m.arquivo,
+      contentId: v === "conteudo" ? $("#mt-c").value : null, geral: v === "geral", weekId: v === "semana" ? $("#mt-w").value : null,
+      data: v === "semana" ? m.data || null : null, disciplina: v === "disciplina" ? $("#mt-d").value.trim() : "" }));
+    closeDrawer(); toast(isNew ? "Material incluído" : "Material salvo"); render();
+  };
 }
 function vBiblioteca() {
-  const head = `<div class="page-h"><div><span class="eyebrow">Biblioteca de materiais</span><h1>Seus materiais</h1><p>Links e arquivos vinculados aos conteúdos. Para adicionar, abra um conteúdo e use a área “Material de estudo”.</p></div></div>`;
+  const head = `<div class="page-h"><div><span class="eyebrow">Biblioteca de materiais</span><h1>Seus materiais</h1><p>Links de estudo organizados por disciplina, semana ou Links úteis. Use “Novo material” para incluir um link, e o lápis para editar qualquer material.</p></div><button class="btn primary" data-act="new-mat">${ic("plus")}Novo material</button></div>`;
   const ms = materials();
-  if (!ms.length) return head + `<div class="card">${empty("lib", "Nenhum material ainda", "Vincule um Google Docs, Sheets ou outro link, ou anexe um PDF a qualquer conteúdo do cronograma.", contents().length ? `<button class="btn primary" data-go="semanas">Ir para as semanas</button>` : "")}</div>`;
-  const list = ms.filter(m => { const c = get(m.contentId) || {}; return (!lf.disc || c.disciplina === lf.disc) && (!lf.week || (c.weekId || m.weekId) === lf.week) && (!lf.q || ((m.nome || "") + " " + (c.assunto || "")).toLowerCase().includes(lf.q.toLowerCase())); });
-  const gk = m => { const c = get(m.contentId); if (c) return c.disciplina || "Sem disciplina"; if (m.geral) return "Links úteis"; if (m.weekId && get(m.weekId)) return "Apoio · " + get(m.weekId).nome; return "Sem vínculo"; };
+  if (!ms.length) return head + `<div class="card">${empty("lib", "Nenhum material ainda", "Inclua um Google Docs, Sheets, vídeo ou qualquer link de estudo. Ele pode ficar nos Links úteis ou ligado a um conteúdo, disciplina ou semana.", `<button class="btn primary" data-act="new-mat">Incluir o primeiro material</button>`)}</div>`;
+  const list = ms.filter(m => { const c = get(m.contentId) || {}; return (!lf.disc || (c.disciplina || m.disciplina) === lf.disc) && (!lf.week || (c.weekId || m.weekId) === lf.week) && (!lf.q || ((m.nome || "") + " " + (c.assunto || "")).toLowerCase().includes(lf.q.toLowerCase())); });
+  const gk = m => { const c = get(m.contentId); if (c) return c.disciplina || "Sem disciplina"; if (m.geral) return "Links úteis"; if (m.weekId && get(m.weekId)) return "Apoio · " + get(m.weekId).nome; if (m.disciplina) return m.disciplina; return "Sem vínculo"; };
   const groups = {}; list.sort((a, b) => (b.geral ? 1 : 0) - (a.geral ? 1 : 0)).forEach(m => (groups[gk(m)] = groups[gk(m)] || []).push(m));
   return head + `<div class="filters"><select id="lfDisc">${opts(disciplinas(), lf.disc, "Todas as disciplinas")}</select><select id="lfWeek">${opts(weeks().map(w => [w.id, w.nome]), lf.week, "Todas as semanas")}</select><input id="lfQ" placeholder="Buscar por nome ou assunto" value="${esc(lf.q)}"></div>`
-    + (Object.entries(groups).map(([d, arr]) => `<div class="card"><div class="card-h"><h2>${esc(d)}</h2><span class="chip">${arr.length}</span></div><div class="list">${arr.map(matItem).join("")}</div></div>`).join("") || `<div class="card"><p class="muted">Nenhum material com esses filtros.</p></div>`);
+    + (Object.entries(groups).map(([d, arr]) => `<div class="card"><div class="card-h"><h2>${esc(d)}</h2><span class="chip">${arr.length}</span></div><div class="list">${arr.map(m => matItem(m, true)).join("")}</div></div>`).join("") || `<div class="card"><p class="muted">Nenhum material com esses filtros.</p></div>`);
 }
 
 /* ---------- Mapas mentais (imagem no Storage do Supabase; PDF vira PNG no navegador) ---------- */
@@ -1973,6 +2134,9 @@ function bindView() {
   on("#mfDisc", "change", e => { mf.disc = e.target.value; render(); });
   on("#mfQ", "change", e => { mf.q = e.target.value; render(); });
   on("#rfTipo", "change", e => { rf.tipo = e.target.value; render(); });
+  on("#sfDisc", "change", e => { sf.disc = e.target.value; render(); });
+  on("#sfFonte", "change", e => { sf.fonte = e.target.value; render(); });
+  on("#sfQtd", "change", e => { sf.qtd = e.target.value; render(); });
   on("#hDay", "change", e => { hDay = e.target.value || TODAY(); render(); });
   on("#hWeek", "change", e => { hWeek = e.target.value; render(); });
 }
@@ -2014,6 +2178,17 @@ document.addEventListener("click", async e => {
     case "wgroup": wGroup = a.dataset.g; render(); break;
     case "seed": seedExample(); break;
     case "clear-example": clearExample(); break;
+    case "sim-start": simStart(); break;
+    case "sim-pick": SIM.sel = a.dataset.l; render(); break;
+    case "sim-confirm": { const e = get(SIM.ids[SIM.i]); if (SIM.sel) simAnswer(SIM.sel, SIM.sel === e.gabarito); break; }
+    case "sim-show": SIM.txt = ($("#sim-txt") || {}).value || ""; SIM.ver = true; render(); break;
+    case "sim-self": simAnswer(SIM.txt, a.dataset.ok === "1"); break;
+    case "sim-next": simNext(); break;
+    case "sim-quit": if (await confirmBox("Encerrar o simulado?", "As respostas deste simulado não serão salvas.", "Encerrar")) { SIM = null; render(); } break;
+    case "sim-new": SIM = null; render(); window.scrollTo(0, 0); break;
+    case "sim-fix": simFixAcertos(); break;
+    case "new-mat": materialForm(); break;
+    case "edit-mat": materialForm(get(id)); break;
     case "del-mat": {
       const m = get(id); if (!m) break;
       if (await confirmBox("Remover este material?", m.arquivo ? "O arquivo será apagado do armazenamento." : "O link deixa de aparecer neste conteúdo.", "Remover")) {
