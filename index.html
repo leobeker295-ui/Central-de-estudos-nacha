@@ -269,6 +269,7 @@ tr:last-child td{border-bottom:0}
 .li .body{flex:1;min-width:0}
 .li .body b{display:block}
 .li .body p{font-size:.84rem;color:var(--ink-2);margin-top:2px}
+.li .body p.err-exp{color:var(--ink);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .stripe{width:4px;align-self:stretch;border-radius:4px;background:var(--line);flex:none}
 .stripe.bad{background:var(--bad)} .stripe.warn{background:var(--warn)} .stripe.ok{background:var(--ok)} .stripe.pink{background:var(--pink)}
 
@@ -370,8 +371,8 @@ tr:last-child td{border-bottom:0}
 .pie-leg b{font-weight:600}
 .pie-leg em{font-style:normal;color:var(--ink-2);text-align:right;font-size:.84rem}
 @media (max-width:860px){.time-pie{grid-template-columns:1fr;gap:16px}}
-.hb{display:grid;grid-template-columns:minmax(90px,160px) 1fr 54px;gap:10px;align-items:center;font-size:.85rem;padding:5px 0}
-.hb .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb{display:grid;grid-template-columns:minmax(0,3fr) minmax(60px,2fr) 44px;gap:12px;align-items:center;font-size:.85rem;padding:5px 0}
+.hb .lbl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 .hb .bar{height:10px}
 .hb .v{text-align:right;font-family:var(--f-mono);font-size:.8rem}
 
@@ -408,7 +409,9 @@ tr:last-child td{border-bottom:0}
   .bottomnav button[aria-current="page"]{color:var(--pink-ink)}
   .citem{grid-template-columns:auto 1fr;}
   .citem .right{grid-column:2}
-  .hb{grid-template-columns:minmax(70px,110px) 1fr 48px}
+  .hb{grid-template-columns:1fr 40px;gap:4px 10px;padding:6px 0}
+  .hb .lbl{grid-column:1/-1}
+  .li .body > .row > b{flex-basis:100%}
 }
 </style>
 
@@ -1158,7 +1161,7 @@ function errItem(e) {
   return `<div class="li"><div class="stripe ${e.status === "corrigido" ? "ok" : e.status === "revisao" ? "warn" : "bad"}"></div>
     <div class="body"><div class="row" style="gap:6px"><b style="flex:1;min-width:0">${esc(e.assunto || "Assunto não informado")}</b>${chip(ESTATUS, e.status)}</div>
     <p>${esc(e.disciplina || "—")} · ${fmtD(e.data)}${e.categoria ? " · " + esc(e.categoria) : ""}${e.questao ? " · " + esc(e.questao) : ""}</p>
-    ${e.explicacao ? `<p style="color:var(--ink)">${esc(e.explicacao).slice(0, 160)}${e.explicacao.length > 160 ? "…" : ""}</p>` : ""}</div>
+    ${e.explicacao ? `<p class="err-exp" title="${esc(e.explicacao)}">${esc(e.explicacao)}</p>` : ""}</div>
     <button class="icon-btn" data-act="edit-error" data-id="${e.id}" aria-label="Editar">${ic("edit")}</button></div>`;
 }
 function vErros() {
