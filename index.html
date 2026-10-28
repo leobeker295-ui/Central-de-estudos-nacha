@@ -268,6 +268,8 @@ tr:last-child td{border-bottom:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
+.rv-box{background:var(--field);border-radius:12px;padding:12px}
+
 /* mapas mentais */
 .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
 .mapcard{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
@@ -508,6 +510,9 @@ const ERR_CATS = ["Falta de conhecimento do conteúdo", "Esquecimento", "Interpr
 const STATUS = { pendente: ["Pendente", "pend"], andamento: ["Em andamento", "and"], concluido: ["Concluído", "ok"] };
 const ESTATUS = { pendente: ["Pendente", "bad"], revisao: ["Em revisão", "and"], corrigido: ["Corrigido", "ok"] };
 const RSTATUS = { pendente: ["A fazer", "pend"], andamento: ["Em andamento", "and"], concluida: ["Concluída", "ok"] };
+const RTIPOS = { dificuldade: "Revisão por dificuldade", erros: "Revisão por erros" };
+const rTipo = r => RTIPOS[r.tipo] ? r.tipo : r.origem === "erro" || /^Erro/.test(r.motivo || "") ? "erros" : "dificuldade";
+const tipoChip = r => `<span class="chip ${rTipo(r) === "erros" ? "bad" : "pink"}" style="font-size:.7rem">${rTipo(r) === "erros" ? "por erros" : "por dificuldade"}</span>`;
 
 /* ================= armazenamento ================= */
 const S = { docs: new Map(), mode: "loading", db: null, col: null, assets: null, downloads: null, ready: false };
@@ -841,7 +846,7 @@ const HELP = {
   },
   revisoes: {
     serve: "Garante que você não esqueça o que já estudou. A revisão espaçada, em intervalos crescentes (por padrão 1, 7, 15 e 30 dias), fixa o conteúdo na memória de longo prazo.",
-    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›)."],
+    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›).", "Cada revisão é “por dificuldade” ou “por erros”. Use o filtro de tipo para ver só uma delas. Marcar “Precisa de revisão” num conteúdo também cria a revisão aqui."],
     dica: "O número rosa no menu mostra quantas revisões vencem hoje ou estão atrasadas. Os intervalos mudam em “Configurar intervalos”.",
   },
   desempenho: {
@@ -997,7 +1002,7 @@ function cItem(c) {
 function revItem(r) {
   const t = TODAY(); const late = r.status !== "concluida" && r.prevista && r.prevista < t;
   return `<div class="li"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
-    <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
+    <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
     ${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div>`;
 }
 
@@ -1199,15 +1204,16 @@ function errorForm(e = {}, ctx = {}) {
     if (e.status && e.status !== f.status) rec.historico = (e.historico || []).concat([{ em: new Date().toISOString(), de: ESTATUS[e.status][0], para: ESTATUS[f.status][0] }]);
     await put(rec);
     if (f.proxRevisao && f.proxRevisao !== e.proxRevisao && !reviews().some(r => r.origemId === rec.id && r.prevista === f.proxRevisao)) {
-      await put({ id: uid("rv"), kind: "review", assunto: rec.assunto, disciplina: rec.disciplina, prevista: f.proxRevisao, motivo: "Erro: " + (rec.categoria || "registrado"), origem: "erro", origemId: rec.id, status: "pendente" });
+      await put({ id: uid("rv"), kind: "review", assunto: rec.assunto, disciplina: rec.disciplina, prevista: f.proxRevisao, motivo: "Erro: " + (rec.categoria || "registrado"), tipo: "erros", origem: "erro", origemId: rec.id, status: "pendente" });
     }
     closeDrawer(); toast("Erro salvo"); render();
   };
 }
 
 /* ---------- Revisões ---------- */
+let rf = { tipo: "" };
 function vRevisoes() {
-  const t = TODAY(); const rs = reviews(); const st = settings();
+  const t = TODAY(); const rs = reviews().filter(r => !rf.tipo || rTipo(r) === rf.tipo); const st = settings();
   const head = `<div class="page-h"><div><span class="eyebrow">Revisões</span><h1>Hora de revisar</h1><p>Crie revisões a partir de erros, conteúdos concluídos ou de qualquer assunto. Intervalos atuais: ${esc(st.intervalos)} dias.</p></div>
     <div class="row">${viewSeg("revisoes")}<button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
   const today = rs.filter(r => r.status !== "concluida" && r.prevista === t);
@@ -1217,8 +1223,9 @@ function vRevisoes() {
   const sug = reinforce();
   const grp = (title, arr, emptyTxt, cls) => `<div class="card"><div class="card-h"><h2>${title}</h2><span class="chip ${cls}">${arr.length}</span></div>${arr.length ? `<div class="list">${arr.map(revItem).join("")}</div>` : `<p class="muted small">${emptyTxt}</p>`}</div>`;
   const sugHTML = (sug.length ? `<div class="card"><div class="card-h"><div><h2>Sugestões de reforço</h2><p>Assuntos com acerto abaixo de 70% ou erros recorrentes. O cronograma não é alterado.</p></div></div>
-    <div class="list">${sug.map(s => `<div class="li"><div class="stripe warn"></div><div class="body"><b>${esc(s.assunto)}</b><p>${esc(s.disciplina)} · ${s.qr ? fmtPct(pct1(s.qc, s.qr)) + " de acerto" : "sem questões"} · ${s.erros} erro${s.erros === 1 ? "" : "s"}</p></div><button class="btn sm ghost" data-act="sug-review" data-a="${esc(s.assunto)}" data-d="${esc(s.disciplina)}">Agendar revisão</button></div>`).join("")}</div></div>` : "");
-  return head + (VIEW.revisoes === "kanban" ? "" : sugHTML)
+    <div class="list">${sug.map(s => `<div class="li"><div class="stripe warn"></div><div class="body"><b>${esc(s.assunto)}</b><p>${esc(s.disciplina)} · ${s.qr ? fmtPct(pct1(s.qc, s.qr)) + " de acerto" : "sem questões"} · ${s.erros} erro${s.erros === 1 ? "" : "s"}</p></div><button class="btn sm ghost" data-act="sug-review" data-a="${esc(s.assunto)}" data-d="${esc(s.disciplina)}" data-t="${s.erros ? "erros" : "dificuldade"}">Agendar revisão</button></div>`).join("")}</div></div>` : "");
+  const filt = `<div class="filters"><select id="rfTipo" aria-label="Tipo de revisão">${opts(Object.entries(RTIPOS), rf.tipo, "Todos os tipos")}</select>${rf.tipo ? `<span class="small muted" style="align-self:center">${rs.length} revis${rs.length === 1 ? "ão" : "ões"}</span>` : ""}</div>`;
+  return head + (VIEW.revisoes === "kanban" ? "" : sugHTML) + filt
     + (VIEW.revisoes === "kanban" ? kanban("review", [
         { k: "pendente", title: "A fazer", cls: "pend", items: rs.filter(r => (r.status || "pendente") === "pendente"), empty: "Nenhuma revisão a fazer." },
         { k: "andamento", title: "Em andamento", cls: "and", items: rs.filter(r => r.status === "andamento"), empty: "Arraste para cá a revisão que você começou." },
@@ -1226,7 +1233,7 @@ function vRevisoes() {
       ], r => {
         const late = r.status !== "concluida" && r.prevista && r.prevista < t;
         return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status === "andamento" ? "warn" : "line",
-          body: `<b>${esc(r.assunto || "Assunto")}</b><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
+          body: `<b>${esc(r.assunto || "Assunto")}</b><p>${tipoChip(r)}</p><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
           open: `<span class="row" style="gap:6px">${mapBtn(r)}<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button></span>` };
       }) : `<div class="grid g3">${grp("Atrasadas", late, "Nenhuma revisão atrasada.", "bad")}${grp("Para hoje", today, "Nada previsto para hoje.", "pink")}${grp("Futuras", fut, "Nenhuma revisão agendada.", "")}</div>`)
     + (done.length && VIEW.revisoes !== "kanban" ? `<div class="card"><div class="card-h"><h2>Concluídas recentemente</h2></div><div class="list">${done.map(revItem).join("")}</div></div>` : "") + (VIEW.revisoes === "kanban" ? sugHTML : "");
@@ -1238,6 +1245,7 @@ function reviewForm(pre = {}) {
     ${fld("A partir de um conteúdo", `<select id="rv-c">${opts(cOpts, pre.contentId || "", "Escolher conteúdo (opcional)")}</select>`, "full")}
     ${fld("Assunto", `<input name="assunto" id="rv-a" value="${esc(pre.assunto)}">`)}
     ${fld("Disciplina", `<input name="disciplina" id="rv-d" list="dlDisc2" value="${esc(pre.disciplina)}">`)}
+    ${fld("Tipo", `<select name="tipo" id="rv-ti">${opts(Object.entries(RTIPOS), RTIPOS[pre.tipo] ? pre.tipo : "dificuldade")}</select>`)}
     ${fld("Motivo", `<input name="motivo" id="rv-m" value="${esc(pre.motivo || "Revisão manual")}">`)}
     ${fld("Data prevista", `<input type="date" name="prevista" id="rv-p" value="${pre.prevista || addDays(TODAY(), ints[0] || 1)}">`)}
     <label class="fld full toggle"><input type="checkbox" id="rv-ser"> <span>Criar série com os intervalos (${ints.join(", ")} dias a partir de hoje)</span></label>
@@ -1249,7 +1257,7 @@ function reviewForm(pre = {}) {
     const f = form($("#rvForm")); const cid = $("#rv-c").value;
     if (!f.assunto) { toast("Informe o assunto"); return; }
     const dates = $("#rv-ser").checked ? ints.map(n => addDays(TODAY(), n)) : [f.prevista];
-    for (const d of dates) await put({ id: uid("rv"), kind: "review", assunto: f.assunto, disciplina: f.disciplina, motivo: f.motivo, prevista: d, origem: cid ? "conteudo" : (pre.origem || "manual"), origemId: cid || pre.origemId || null, status: "pendente" });
+    for (const d of dates) await put({ id: uid("rv"), kind: "review", assunto: f.assunto, disciplina: f.disciplina, motivo: f.motivo, tipo: f.tipo, prevista: d, origem: cid ? "conteudo" : (pre.origem || "manual"), origemId: cid || pre.origemId || null, status: "pendente" });
     closeDrawer(); toast(dates.length > 1 ? dates.length + " revisões agendadas" : "Revisão agendada"); render();
   };
 }
@@ -1266,7 +1274,7 @@ function reviewDone(r) {
   $("#rdSave").onclick = async () => {
     const f = form($("#rdForm"));
     await put(Object.assign({}, r, { resultado: f.resultado, dificuldades: f.dificuldades, status: "concluida", concluidaEm: r.concluidaEm || TODAY() }));
-    if (f.nova) await put({ id: uid("rv"), kind: "review", assunto: r.assunto, disciplina: r.disciplina, motivo: "Nova revisão após " + fmtD(TODAY()), prevista: f.nova, origem: "revisao", origemId: r.id, status: "pendente" });
+    if (f.nova) await put({ id: uid("rv"), kind: "review", assunto: r.assunto, disciplina: r.disciplina, motivo: "Nova revisão após " + fmtD(TODAY()), tipo: rTipo(r), prevista: f.nova, origem: "revisao", origemId: r.id, status: "pendente" });
     closeDrawer(); toast("Revisão registrada"); render();
   };
 }
@@ -1641,6 +1649,20 @@ function weekForm(w = {}) {
     await put(rec); selWeek = rec.id; closeDrawer(); toast("Semana salva"); if (isNew && route !== "semanas" && route !== "crono") go("semanas", { week: rec.id }); else render();
   };
 }
+// "Precisa de revisão" no conteúdo cria (ou ajusta) a revisão na aba Revisões; desmarcar remove a criada por ele enquanto estiver "a fazer"
+const openReviewOf = c => reviews().find(r => r.status !== "concluida" && (r.origemId === c.id || r.assunto === c.assunto));
+async function syncContentReview(before, c, opt) {
+  const r = openReviewOf(c);
+  if (c.revisar) {
+    if (r && r.origem !== "marcado") return "";
+    if (r) { if (r.tipo === opt.tipo && r.prevista === opt.prevista) return ""; await put(Object.assign({}, r, { tipo: opt.tipo || rTipo(r), prevista: opt.prevista || r.prevista })); return "revisão atualizada"; }
+    const prevista = opt.prevista || addDays(TODAY(), 1);
+    await put({ id: uid("rv"), kind: "review", assunto: c.assunto, disciplina: c.disciplina, prevista, motivo: "Marcado para revisão", tipo: opt.tipo || "dificuldade", origem: "marcado", origemId: c.id, status: "pendente" });
+    return "revisão criada para " + fmtD(prevista);
+  }
+  if (before.revisar && r && r.origem === "marcado" && (r.status || "pendente") === "pendente") { await del(r.id); return "revisão removida"; }
+  return "";
+}
 function contentForm(c = {}, ctx = {}) {
   const isNew = !c.id;
   const ws = weeks();
@@ -1660,6 +1682,12 @@ function contentForm(c = {}, ctx = {}) {
     ${fld("Questões corretas", `<input type="number" min="0" inputmode="numeric" name="qCorretas" id="c-qc" value="${c.qCorretas ?? ""}">`, "", `Acertos: <b id="c-acc">${fmtPct(acc)}</b>`)}
     ${fld("Data de conclusão", `<input type="date" name="concluidaEm" id="c-ce" value="${c.concluidaEm || ""}">`, "", "Preenchida ao marcar o check")}
     <label class="fld toggle" style="align-self:end;min-height:42px"><input type="checkbox" name="revisar" id="c-rv" ${c.revisar ? "checked" : ""}><span>Precisa de revisão</span></label>
+    <div class="full rv-box" id="c-rvbox" ${c.revisar ? "" : "hidden"}>${(() => {
+      const r = c.id ? openReviewOf(c) : null, mine = r && r.origem === "marcado", ints = settings().intervalos.split(/[,; ]+/).map(Number).filter(n => n > 0);
+      if (r && !mine) return `<p class="small">Já existe uma revisão aberta deste assunto (${rTipo(r) === "erros" ? "por erros" : "por dificuldade"}, prevista ${fmtD(r.prevista)}). Ela continua valendo: nenhuma nova será criada.</p>`;
+      return `<div class="form">${fld("Tipo da revisão", `<select id="c-rvt">${opts(Object.entries(RTIPOS), mine ? rTipo(r) : ers.length ? "erros" : "dificuldade")}</select>`)}${fld("Revisar em", `<input type="date" id="c-rvd" value="${mine ? r.prevista : addDays(TODAY(), ints[0] || 1)}">`)}</div>
+        <p class="small muted" style="margin-top:6px">${mine ? "A revisão já está na aba Revisões. Mude aqui o tipo ou a data." : "Ao salvar, a revisão vai para a aba Revisões."}</p>`;
+    })()}</div>
     ${fld("Observações pessoais", `<textarea name="obs" id="c-o">${esc(c.obs)}</textarea>`, "full")}
     <datalist id="dlDisc4">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist>
   </form>
@@ -1686,6 +1714,7 @@ function contentForm(c = {}, ctx = {}) {
   const upAcc = () => { const r = +$("#c-qr").value || 0, k = +$("#c-qc").value || 0; $("#c-acc").textContent = fmtPct(pct1(k, r)); $("#c-qc").setCustomValidity(k > r ? "Corretas não pode passar de resolvidas" : ""); };
   $("#c-qr").oninput = upAcc; $("#c-qc").oninput = upAcc;
   $("#cCancel").onclick = closeDrawer;
+  $("#c-rv").onchange = e => { $("#c-rvbox").hidden = !e.target.checked; };
   $("#cSave").onclick = async () => {
     const f = form($("#cForm"));
     if (!f.assunto) { toast("Informe o nome do assunto"); return; }
@@ -1695,7 +1724,9 @@ function contentForm(c = {}, ctx = {}) {
     if (rec.status === "concluido" && !rec.concluidaEm) rec.concluidaEm = TODAY();
     if (rec.status !== "concluido") rec.concluidaEm = f.concluidaEm && c.status === "concluido" ? "" : f.concluidaEm;
     if (isNew) rec.ordem = contentsOf(rec.weekId).length + 1;
-    await put(rec); toast("Conteúdo salvo");
+    await put(rec);
+    const rv = await syncContentReview(c, rec, { tipo: ($("#c-rvt") || {}).value, prevista: ($("#c-rvd") || {}).value });
+    toast("Conteúdo salvo" + (rv ? " · " + rv : ""));
     if (isNew) contentForm(rec); else { closeDrawer(); render(); }
   };
   if (!isNew) {
@@ -1931,6 +1962,7 @@ function bindView() {
   on("#lfQ", "change", e => { lf.q = e.target.value; render(); });
   on("#mfDisc", "change", e => { mf.disc = e.target.value; render(); });
   on("#mfQ", "change", e => { mf.q = e.target.value; render(); });
+  on("#rfTipo", "change", e => { rf.tipo = e.target.value; render(); });
   on("#hDay", "change", e => { hDay = e.target.value || TODAY(); render(); });
   on("#hWeek", "change", e => { hWeek = e.target.value; render(); });
 }
@@ -1960,7 +1992,7 @@ document.addEventListener("click", async e => {
     case "new-error": errorForm({}, { contentId: a.dataset.content }); break;
     case "edit-error": errorForm(get(id)); break;
     case "new-review": { const c = get(a.dataset.content); reviewForm(c ? { contentId: c.id, assunto: c.assunto, disciplina: c.disciplina, motivo: "Conteúdo concluído" } : {}); break; }
-    case "sug-review": reviewForm({ assunto: a.dataset.a, disciplina: a.dataset.d, motivo: "Sugestão de reforço" }); break;
+    case "sug-review": reviewForm({ assunto: a.dataset.a, disciplina: a.dataset.d, motivo: "Sugestão de reforço", tipo: a.dataset.t }); break;
     case "done-review": reviewDone(get(id)); break;
     case "new-session": sessionForm({}, { contentId: a.dataset.content }); break;
     case "edit-session": sessionForm(get(id)); break;
