@@ -238,6 +238,23 @@ tr:last-child td{border-bottom:0}
 .fld textarea{min-height:76px;resize:vertical}
 .fld input:focus,.fld select:focus,.fld textarea:focus,.inp:focus{border-color:var(--pink);background:var(--white)}
 .fld .hint{font-size:.75rem;color:var(--ink-3)}
+.pick{position:relative}
+.fld .pick .pick-in{padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;text-overflow:ellipsis}
+.fld .pick .pick-in:focus{background-image:none}
+.fld .pick .pick-in:focus::placeholder{color:var(--ink-2)}
+.pick-x{all:unset;cursor:pointer;position:absolute;right:30px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:var(--ink-3)}
+.pick-x:hover{background:var(--line);color:var(--ink)}
+.pick-x[hidden]{display:none}
+.pick-x svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2}
+.pick-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;max-height:min(340px,50vh);overflow-y:auto;margin:0;padding:4px;list-style:none;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(20,10,40,.18)}
+.pick-list[hidden]{display:none}
+.pick-list li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.88rem;line-height:1.35}
+.pick-list li small{display:block;font-size:.72rem;color:var(--ink-3);font-weight:600}
+.pick-list li.on{background:var(--field)}
+.pick-list li[aria-selected=true]{box-shadow:inset 3px 0 0 var(--pink)}
+.pick-list li.blank{color:var(--ink-2);font-style:italic}
+.pick-list li.none{color:var(--ink-3);cursor:default}
+.pick-list mark{background:var(--pink-soft,rgba(255,105,180,.22));color:inherit;border-radius:3px;padding:0 1px}
 .fld .err{font-size:.75rem;color:var(--bad)}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:500}
 .toggle input{appearance:none;width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;transition:background .2s;flex:none}
@@ -544,6 +561,7 @@ const ICONS = {
   lib: '<path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="m16 5 3.5-1 3 15.5-3.5 1z"/>',
   close: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
   play: '<path d="M7 4.5v15l12-7.5z"/>',
   pause: '<path d="M9 5v14M15 5v14"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
@@ -811,8 +829,54 @@ function confirmBox(title, text, okLabel = "Excluir") {
 let drawerOnClose = null;
 function openDrawer(title, body, foot, onClose) {
   $("#dTitle").textContent = title; $("#dBody").innerHTML = body; $("#dFoot").innerHTML = foot || "";
+  $("#dBody").querySelectorAll("select.pick-src").forEach(pickify);
   $("#drawer").classList.add("on"); $("#scrim").classList.add("on"); $("#dBody").scrollTop = 0;
   drawerOnClose = onClose || null;
+}
+/* lista com busca: troca o select por um campo onde se digita parte do nome; o select continua no formulário (escondido) guardando o valor */
+const norm = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+function pickify(sel) {
+  const box = document.createElement("div"); box.className = "pick";
+  const lid = "pl-" + (sel.id || Math.random().toString(36).slice(2));
+  box.innerHTML = `<input type="text" class="pick-in" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${lid}" autocomplete="off" spellcheck="false"><button type="button" class="pick-x" aria-label="Limpar" tabindex="-1">${ic("x")}</button><ul class="pick-list" id="${lid}" role="listbox" hidden></ul>`;
+  sel.before(box); sel.hidden = true; sel.tabIndex = -1;
+  const inp = box.querySelector("input"), list = box.querySelector("ul"), clr = box.querySelector(".pick-x");
+  let items = [], act = -1, lastQ = null;
+  const blank = () => [...sel.options].find(o => o.value === "");
+  const label = () => { const o = sel.selectedOptions[0]; const b = blank(); inp.value = o && o.value ? o.text : ""; inp.placeholder = (b ? b.text : "Escolha") + " · digite para buscar"; clr.hidden = !(o && o.value && b); };
+  const hl = (t, ws) => { let h = esc(t); ws.forEach(w => { const i = norm(t).indexOf(w); if (i >= 0 && w) h = h.replace(esc(t.slice(i, i + w.length)), m => `<mark>${m}</mark>`); }); return h; };
+  const show = q => {
+    lastQ = q; const ws = norm(q).split(/\s+/).filter(Boolean);
+    items = [...sel.options].filter(o => !ws.length || ws.every(w => norm(o.text).includes(w)));
+    act = Math.max(0, items.findIndex(o => o.value === sel.value));
+    list.innerHTML = items.length ? items.map((o, i) => { const k = o.text.indexOf(" · "); const pre = o.value && k > 0 ? o.text.slice(0, k) : "", rest = pre ? o.text.slice(k + 3) : o.text;
+      return `<li role="option" id="${lid}-${i}" data-i="${i}" aria-selected="${o.value === sel.value}" class="${o.value ? "" : "blank"}">${pre ? `<small>${hl(pre, ws)}</small>` : ""}<span>${hl(rest, ws)}</span></li>`; }).join("")
+      : `<li class="none">Nada encontrado para “${esc(q)}”</li>`;
+    list.hidden = false; inp.setAttribute("aria-expanded", "true"); mark();
+  };
+  const mark = () => { list.querySelectorAll("li[data-i]").forEach(li => li.classList.toggle("on", +li.dataset.i === act)); const li = list.querySelector(`li[data-i="${act}"]`); if (li) { li.scrollIntoView({ block: "nearest" }); inp.setAttribute("aria-activedescendant", li.id); } };
+  // ao abrir, o campo fica vazio para digitar a busca; a escolha atual aparece em cinza
+  const open = () => { if (!list.hidden) return; const o = sel.selectedOptions[0]; inp.value = ""; inp.placeholder = o && o.value ? o.text : "Digite para buscar"; show(""); };
+  const close = () => { list.hidden = true; inp.setAttribute("aria-expanded", "false"); inp.removeAttribute("aria-activedescendant"); label(); };
+  const choose = o => { if (o && o.value !== sel.value) { sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); sel.dispatchEvent(new Event("input", { bubbles: true })); } close(); inp.blur(); };
+  inp.addEventListener("focus", open);
+  inp.addEventListener("click", open);
+  inp.addEventListener("input", () => show(inp.value));
+  inp.addEventListener("blur", close);
+  inp.addEventListener("keydown", e => {
+    if (list.hidden && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) open(); // voltou a digitar depois do Esc
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (list.hidden) { open(); return; } act = Math.max(0, Math.min(items.length - 1, act + (e.key === "ArrowDown" ? 1 : -1))); mark(); }
+    else if (e.key === "Enter") { e.preventDefault(); if (list.hidden && !lastQ) return; if (list.hidden || lastQ !== inp.value) show(inp.value); if (items[act]) choose(items[act]); }
+    else if (e.key === "Escape" && !list.hidden) { e.preventDefault(); e.stopPropagation(); close(); }
+  });
+  list.addEventListener("mousedown", e => e.preventDefault()); // não perder o foco antes do clique
+  list.addEventListener("click", e => { e.preventDefault(); const li = e.target.closest("li[data-i]"); if (li) choose(items[+li.dataset.i]); }); // preventDefault: o <label> em volta reabriria a lista
+  clr.addEventListener("mousedown", e => e.preventDefault());
+  clr.addEventListener("click", () => choose(blank()));
+  // opções trocadas por código (ex.: lista do timer muda com a matéria) ou valor mudado por fora
+  new MutationObserver(label).observe(sel, { childList: true });
+  sel.addEventListener("change", label);
+  label();
 }
 function closeDrawer() { $("#drawer").classList.remove("on"); $("#scrim").classList.remove("on"); $("#sheet").classList.remove("on"); if (drawerOnClose) { const f = drawerOnClose; drawerOnClose = null; f(); } }
 $("#dClose").onclick = closeDrawer; $("#scrim").onclick = closeDrawer;
@@ -1249,7 +1313,7 @@ function errorForm(e = {}, ctx = {}) {
   const c = e.contentId ? get(e.contentId) : ctx.contentId ? get(ctx.contentId) : null;
   const cOpts = contents().map(x => [x.id, (x.disciplina ? x.disciplina + " · " : "") + x.assunto]);
   openDrawer(isNew ? "Registrar erro" : "Editar erro", `<form class="form" id="errForm">
-    ${fld("Conteúdo do cronograma", `<select name="contentId" id="ef-c">${opts(cOpts, e.contentId || (c && c.id) || "", "Não vincular")}</select>`, "full", "Preenche disciplina e assunto automaticamente")}
+    ${fld("Conteúdo do cronograma", `<select class="pick-src" name="contentId" id="ef-c">${opts(cOpts, e.contentId || (c && c.id) || "", "Não vincular")}</select>`, "full", "Preenche disciplina e assunto automaticamente")}
     ${fld("Disciplina", `<input name="disciplina" id="ef-d" list="dlDisc" value="${esc(e.disciplina || (c && c.disciplina) || "")}">`)}
     ${fld("Assunto específico", `<input name="assunto" id="ef-a" value="${esc(e.assunto || (c && c.assunto) || "")}">`)}
     ${fld("Data do erro", `<input type="date" name="data" id="ef-dt" value="${e.data || TODAY()}">`)}
@@ -1405,7 +1469,7 @@ function reviewForm(pre = {}) {
   const cOpts = contents().map(x => [x.id, (x.disciplina ? x.disciplina + " · " : "") + x.assunto]);
   const ints = settings().intervalos.split(/[,; ]+/).map(Number).filter(n => n > 0);
   openDrawer("Nova revisão", `<form class="form" id="rvForm">
-    ${fld("A partir de um conteúdo", `<select id="rv-c">${opts(cOpts, pre.contentId || "", "Escolher conteúdo (opcional)")}</select>`, "full")}
+    ${fld("A partir de um conteúdo", `<select class="pick-src" id="rv-c">${opts(cOpts, pre.contentId || "", "Escolher conteúdo (opcional)")}</select>`, "full")}
     ${fld("Assunto", `<input name="assunto" id="rv-a" value="${esc(pre.assunto)}">`)}
     ${fld("Disciplina", `<input name="disciplina" id="rv-d" list="dlDisc2" value="${esc(pre.disciplina)}">`)}
     ${fld("Tipo", `<select name="tipo" id="rv-ti">${opts(Object.entries(RTIPOS), RTIPOS[pre.tipo] ? pre.tipo : "dificuldade")}</select>`)}
@@ -1514,7 +1578,7 @@ function sessionForm(s = {}, ctx = {}) {
   const st = settings();
   openDrawer(isNew ? "Registrar bloco de estudo" : "Editar bloco", `<form class="form" id="sForm">
     ${fld("Data", `<input type="date" name="data" id="s-d" value="${s.data || (route === "horas" ? hDay : TODAY())}">`)}
-    ${fld("Conteúdo", `<select name="contentId" id="s-c">${opts(cOpts, s.contentId || ctx.contentId || "", "Sem conteúdo específico")}</select>`)}
+    ${fld("Conteúdo", `<select class="pick-src" name="contentId" id="s-c">${opts(cOpts, s.contentId || ctx.contentId || "", "Sem conteúdo específico")}</select>`)}
     ${fld("Disciplina (se não houver conteúdo)", `<input name="disciplina" id="s-di" list="dlDisc3" value="${esc(s.disciplina)}">`, "full")}
     ${fld("Início", `<input type="time" name="inicio" id="s-i" value="${s.inicio || ""}">`)}
     ${fld("Término", `<input type="time" name="fim" id="s-f" value="${s.fim || ""}">`)}
@@ -1595,7 +1659,7 @@ function timerForm(troca, ctx = {}) {
     ${old ? `<div class="full banner"><span>O bloco de <b>${esc(old.disciplina || "estudo")}</b> (${hm(tLiq(old) / 60000)}) é salvo agora e o timer recomeça do zero na matéria escolhida.</span></div>` : ""}
     ${fld("Matéria", `<select id="tm-d">${opts(ds.concat([["__outra", "Outra matéria…"]]), d0, "Escolha a matéria")}</select>`, "full")}
     <div class="full" id="tm-ow" hidden>${fld("Nome da matéria", `<input id="tm-o" placeholder="Ex.: Atualidades">`)}</div>
-    <div class="full" id="tm-cw" hidden>${fld("Conteúdo do cronograma (opcional)", `<select id="tm-c"></select>`, "", "Com o conteúdo, as horas aparecem nele e contam na semana certa.")}</div></form>`,
+    <div class="full" id="tm-cw" hidden>${fld("Conteúdo do cronograma (opcional)", `<select class="pick-src" id="tm-c"></select>`, "", "Com o conteúdo, as horas aparecem nele e contam na semana certa.")}</div></form>`,
     `<button class="btn ghost" id="tmCancel">Cancelar</button><button class="btn primary" id="tmGo">${ic(old ? "swap" : "play")}${old ? "Trocar e continuar" : "Iniciar"}</button>`);
   const fill = () => {
     const d = $("#tm-d").value; $("#tm-ow").hidden = d !== "__outra";
@@ -1645,7 +1709,7 @@ function materialForm(m = {}) {
     ${fld("Tipo", `<select id="mt-t">${opts(MTIPOS, MTIPOS.includes(m.tipo) ? m.tipo : isNew ? "Google Docs" : "Outro")}</select>`)}
     ${fld("Onde aparece", `<select id="mt-v">${opts([["geral", "Links úteis"], ["conteudo", "Num conteúdo do cronograma"], ["disciplina", "Numa disciplina"], ["semana", "Numa semana"]], v0)}</select>`)}
     ${m.arquivo ? `<p class="full small muted">Arquivo anexado: o endereço não pode ser trocado aqui.</p>` : fld("Link (URL)", `<input id="mt-u" type="url" inputmode="url" value="${esc(m.url)}" placeholder="https://docs.google.com/…">`, "full", "Documentos privados do Google só abrem para quem tem permissão.")}
-    <div class="full" data-mv="conteudo">${fld("Conteúdo", `<select id="mt-c">${opts(cOpts, m.contentId || "", "Escolha o conteúdo")}</select>`)}</div>
+    <div class="full" data-mv="conteudo">${fld("Conteúdo", `<select class="pick-src" id="mt-c">${opts(cOpts, m.contentId || "", "Escolha o conteúdo")}</select>`)}</div>
     <div class="full" data-mv="disciplina">${fld("Disciplina", `<input id="mt-d" list="dlDisc6" value="${esc(m.disciplina || (get(m.contentId) || {}).disciplina || "")}">`)}<datalist id="dlDisc6">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist></div>
     <div class="full" data-mv="semana">${fld("Semana", `<select id="mt-w">${opts(weeks().map(w => [w.id, w.nome]), m.weekId || (currentWeek() || {}).id || "")}</select>`)}</div>
   </form>`, `${!isNew ? `<button class="btn danger" id="mtDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="mtCancel">Cancelar</button><button class="btn primary" id="mtSave">Salvar material</button>`);
@@ -1747,7 +1811,7 @@ function mapForm(m = {}) {
     ${isNew ? fld("Arquivo", `<input type="file" id="mp-f" accept="application/pdf,.pdf,image/png,image/jpeg,image/webp">`, "", "PDF (cada página vira uma imagem PNG) ou imagem PNG, JPG ou WebP.") : `<img class="mp-big" data-path="${esc(m.mini || m.path)}" alt="">`}
     <div id="mp-prev" class="mp-prev"></div>
     ${fld("Título", `<input id="mp-t" value="${esc(m.titulo)}" placeholder="Ex.: Direitos fundamentais (arts. 5º a 17)">`)}
-    ${fld("Conteúdo do cronograma", `<select id="mp-c">${opts(cOpts, m.contentId || "", "Não ligar a um conteúdo")}</select>`, "", "Ligado a um conteúdo, o mapa aparece nas revisões desse assunto.")}
+    ${fld("Conteúdo do cronograma", `<select class="pick-src" id="mp-c">${opts(cOpts, m.contentId || "", "Não ligar a um conteúdo")}</select>`, "", "Ligado a um conteúdo, o mapa aparece nas revisões desse assunto.")}
     ${fld("Disciplina", `<input id="mp-d" list="dlDisc5" value="${esc(m.disciplina)}">`)}
     <datalist id="dlDisc5">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist>
   </form>`, `${!isNew ? `<button class="btn danger" id="mpDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="mpCancel">Cancelar</button><button class="btn primary" id="mpSave" ${isNew ? "disabled" : ""}>${isNew ? "Enviar mapa" : "Salvar"}</button>`);
