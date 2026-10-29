@@ -71,6 +71,23 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .top .overall .bar{flex:1}
 .top .overall span{font-size:.82rem;color:var(--ink-2);white-space:nowrap}
 .top .spacer{flex:1}
+.tm-chip{display:flex;align-items:center;gap:2px;background:var(--white);border-radius:99px;padding:3px;box-shadow:var(--shadow);min-width:0}
+.tm-chip[hidden]{display:none}
+.tm-chip .tm-go{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 6px 4px 11px;font-weight:600;font-size:.88rem;min-width:0}
+.tm-chip .tm-go i{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none;animation:tmPulse 1.6s ease-in-out infinite}
+.tm-chip.paused .tm-go i{background:var(--warn);animation:none}
+.tm-chip .tm-d{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-chip .tm-go b,.tm-clock{font-variant-numeric:tabular-nums}
+.tm-chip .icon-btn{width:32px;height:32px;border-radius:99px}
+@keyframes tmPulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.tm-chip .tm-go i{animation:none}}
+.tm-card{display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;border-left:4px solid var(--ok)}
+.tm-card.paused{border-left-color:var(--warn)}
+.tm-card .eyebrow{color:var(--ok)}
+.tm-card.paused .eyebrow{color:var(--warn)}
+.tm-clock{display:block;font-family:var(--f-display);font-size:2.6rem;font-weight:800;line-height:1.15;margin:2px 0}
+.tm-card p{margin:0;font-weight:600}
+.tm-card small{display:block;margin-top:2px}
 .mob-brand{display:none}
 .theme-btn{flex:none}
 .content{padding-block:24px 60px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;max-width:1600px;width:100%;margin-inline:auto}
@@ -415,16 +432,21 @@ tr:last-child td{border-bottom:0}
 
 @media (max-width:1020px){.g3{grid-template-columns:1fr 1fr}}
 @media (max-width:860px){
-  .app{grid-template-columns:1fr}
+  .app{grid-template-columns:minmax(0,1fr)}
   .side{display:none}
   .mob-brand{display:flex}
   .top{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));gap:10px}
   .top .overall{order:5;max-width:none;flex-basis:100%}
   .top .hide-m{display:none}
   .top .theme-btn{margin-left:auto}
+  .top .tm-chip{order:6;flex-basis:100%}
+  .tm-chip .tm-go{flex:1}
+  .tm-chip .tm-d{max-width:none;flex:1}
+  .tm-card .row{width:100%}
+  .tm-card .row .btn{flex:1}
   .content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 100px}
   .foot{display:none}
-  .g2,.g3{grid-template-columns:1fr}
+  .g2,.g3{grid-template-columns:minmax(0,1fr)}
   .form{grid-template-columns:1fr}
   .kpi.lead{grid-column:1/-1}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -455,6 +477,7 @@ tr:last-child td{border-bottom:0}
     <header class="top">
       <div class="brand mob-brand"><div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><b>Central de Estudos</b></div>
       <div class="week-pill" id="weekPill"><i></i><span>Sem semana ativa</span></div>
+      <div class="tm-chip" id="tmChip" hidden></div>
       <div class="overall"><div class="bar"><i id="ovBar" style="width:0"></i></div><span id="ovTxt">0% do plano</span></div>
       <div class="spacer hide-m"></div>
       <button class="btn ghost sm hide-m" id="goCrono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Cronograma</button>
@@ -521,6 +544,10 @@ const ICONS = {
   lib: '<path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="m16 5 3.5-1 3 15.5-3.5 1z"/>',
   close: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  play: '<path d="M7 4.5v15l12-7.5z"/>',
+  pause: '<path d="M9 5v14M15 5v14"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
@@ -893,7 +920,7 @@ const HELP = {
   },
   horas: {
     serve: "Mede o tempo de estudo real, sem as pausas, e compara com a sua meta diária. As horas líquidas mostram se a rotina planejada está sendo cumprida.",
-    fazer: ["Ao terminar um bloco de estudo, clique em “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar” para mudar a meta diária e o tempo do almoço."],
+    fazer: ["Clique em “Iniciar estudo”, escolha a matéria e o timer começa. Use Pausar/Retomar nas paradas e “Encerrar” no fim: o bloco é salvo sozinho, já sem as pausas.", "O timer aparece no topo de todas as abas e continua contando mesmo se fechar a página. Dá para iniciar no computador e encerrar pelo celular.", "Mudou de matéria? Use “Trocar matéria”: o bloco atual é salvo e o timer recomeça na nova.", "Se preferir lançar depois, use “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar” para mudar a meta diária e o tempo do almoço."],
     dica: "Vincule o bloco a um conteúdo para as horas aparecerem nele e na semana certa.",
   },
   biblioteca: {
@@ -955,6 +982,7 @@ function render() {
   const modeTxt = { db: "Salvo na nuvem · disponível em qualquer dispositivo", local: "Modo local · salvo só neste navegador", login: "Entre para ver seus registros", offline: "Sem conexão com a nuvem" }[S.mode] || "Conectando…";
   $("#footTxt").textContent = modeTxt;
   $("#sideFoot").innerHTML = `<span>${modeTxt}</span>` + (S.user ? `<span>${esc(S.user.email)} · <button class="linkbtn" data-act="logout">Sair</button></span>` : "");
+  timerChip();
   if (S.mode === "login") { $("#view").innerHTML = loginView(); bindLogin(); return; }
   if (S.mode === "offline") { $("#view").innerHTML = `<div class="card">${empty("spark", "Não consegui abrir seus registros", "A conexão com a nuvem falhou. Verifique a internet e tente de novo.", `<button class="btn primary" data-act="cloud-retry">Tentar de novo</button>`)}</div>`; return; }
   if (!S.ready) { $("#view").innerHTML = `<div class="card">${empty("spark", "Abrindo sua central", "Buscando seus registros…")}</div>`; return; }
@@ -1468,9 +1496,11 @@ function vHoras() {
   const w = weekOfDate(hDay);
   const wTot = w ? sessions().filter(s => sessionWeek(s) === w.id).reduce((a, s) => a + sessionMin(s), 0) : null;
   const last7 = [...Array(7)].map((_, i) => addDays(hDay, i - 6));
+  const tm = timer();
   return `<div class="page-h"><div><span class="eyebrow">Horas líquidas</span><h1>Controle de tempo</h1><p>Cada bloco desconta pausas e, se marcado, o almoço de ${st.almocoMin} min. Quem registra o almoço como pausa não marca o desconto, para não contar duas vezes.</p></div>
-    <div class="row"><div class="seg" role="group" aria-label="Visualização"><button data-act="hview" data-v="lista" aria-pressed="${hView === "lista"}">Lista</button><button data-act="hview" data-v="graficos" aria-pressed="${hView === "graficos"}">Gráficos</button></div><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn primary" data-act="new-session">${ic("plus")}Novo bloco</button></div></div>
-    <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
+    <div class="row"><div class="seg" role="group" aria-label="Visualização"><button data-act="hview" data-v="lista" aria-pressed="${hView === "lista"}">Lista</button><button data-act="hview" data-v="graficos" aria-pressed="${hView === "graficos"}">Gráficos</button></div><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn ${tm ? "primary" : "ghost"}" data-act="new-session">${ic("plus")}Novo bloco</button>${tm ? "" : `<button class="btn primary" data-act="timer-new">${ic("play")}Iniciar estudo</button>`}</div></div>
+    ${tm ? timerCard(tm) : ""}
+    <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}${tm && hDay === TODAY() ? ` · +<span data-tmh>${hm(tLiq(tm) / 60000)}</span> no timer` : ""}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
       <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
@@ -1508,6 +1538,92 @@ function sessionForm(s = {}, ctx = {}) {
     await put(rec); closeDrawer(); toast("Bloco salvo · " + hm(sessionMin(rec))); render();
   };
 }
+
+/* ---------- Timer de estudo ---------- */
+// cada timer é um registro (kind "timer"): continua contando com a página fechada e aparece em qualquer aparelho
+const BASE_TITLE = document.title;
+const timer = () => all("timer").sort((a, b) => (b.inicio || "").localeCompare(a.inicio || ""))[0];
+const tPausa = t => (+t.pausadoMs || 0) + (t.pausaDesde ? Math.max(0, Date.now() - Date.parse(t.pausaDesde)) : 0);
+const tLiq = t => Math.max(0, (t.pausaDesde ? Date.parse(t.pausaDesde) : Date.now()) - Date.parse(t.inicio) - (+t.pausadoMs || 0));
+const clk = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600); return (h ? h + ":" : "") + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60); };
+const hhmm = d => pad(d.getHours()) + ":" + pad(d.getMinutes());
+const tAssunto = t => { const c = get(t.contentId); return c ? c.assunto : ""; };
+function timerChip() {
+  const el = $("#tmChip"), t = S.ready && S.mode !== "login" ? timer() : null;
+  el.hidden = !t;
+  if (!t) { el.innerHTML = ""; document.title = BASE_TITLE; return; }
+  const p = !!t.pausaDesde;
+  el.classList.toggle("paused", p);
+  el.innerHTML = `<button class="tm-go" data-act="timer-go" title="${esc((t.disciplina || "Estudo") + (tAssunto(t) ? " · " + tAssunto(t) : ""))}"><i></i><span class="tm-d">${esc(t.disciplina || "Estudo")}</span><b class="num" data-tm>${clk(tLiq(t))}</b></button>
+    <button class="icon-btn" data-act="${p ? "timer-resume" : "timer-pause"}" aria-label="${p ? "Retomar" : "Pausar"}" title="${p ? "Retomar" : "Pausar"}">${ic(p ? "play" : "pause")}</button><button class="icon-btn" data-act="timer-stop" aria-label="Encerrar e salvar" title="Encerrar e salvar">${ic("stop")}</button>`;
+}
+function timerCard(t) {
+  const p = !!t.pausaDesde, a = tAssunto(t);
+  return `<div class="card tm-card${p ? " paused" : ""}"><div><span class="eyebrow">${p ? "Pausado" : "Estudando agora"}</span><b class="tm-clock" data-tm>${clk(tLiq(t))}</b>
+    <p>${esc(t.disciplina || "Estudo")}${a ? `<span class="muted" style="font-weight:400"> · ${esc(a)}</span>` : ""}</p><small class="muted">Começou ${iso(new Date(t.inicio)) === TODAY() ? "às" : "em " + fmtD(iso(new Date(t.inicio))) + " às"} ${hhmm(new Date(t.inicio))} · pausas: <span data-tmp>${Math.floor(tPausa(t) / 60000)} min</span></small></div>
+    <div class="row"><button class="btn ghost" data-act="timer-switch">${ic("swap")}Trocar matéria</button><button class="btn ghost" data-act="${p ? "timer-resume" : "timer-pause"}">${ic(p ? "play" : "pause")}${p ? "Retomar" : "Pausar"}</button><button class="btn primary" data-act="timer-stop">${ic("stop")}Encerrar e salvar</button></div></div>`;
+}
+async function timerStart(disciplina, contentId) {
+  await put({ id: uid("tm"), kind: "timer", inicio: new Date().toISOString(), pausadoMs: 0, pausaDesde: null, disciplina, contentId: contentId || null });
+  render();
+}
+async function timerPause() { const t = timer(); if (t && !t.pausaDesde) { await put(Object.assign({}, t, { pausaDesde: new Date().toISOString() })); render(); } }
+async function timerResume() { const t = timer(); if (t && t.pausaDesde) { await put(Object.assign({}, t, { pausadoMs: tPausa(t), pausaDesde: null })); render(); } }
+// encerra o timer e grava um bloco comum de horas (editável como os outros); na troca de matéria não pergunta nada
+async function timerSave(t, troca) {
+  if (!t) return;
+  const liq = Math.round(tLiq(t) / 60000);
+  if (liq < 1) {
+    if (!troca && !(await confirmBox("Descartar o timer?", "Ele tem menos de 1 minuto, então nenhum bloco é salvo.", "Descartar"))) return;
+    await del(t.id); if (!troca) { toast("Timer descartado"); render(); } return;
+  }
+  const ini = new Date(Math.round(Date.parse(t.inicio) / 60000) * 60000), fim = new Date(Math.round((t.pausaDesde ? Date.parse(t.pausaDesde) : Date.now()) / 60000) * 60000);
+  const rec = { id: uid("ss"), kind: "session", data: iso(ini), inicio: hhmm(ini), fim: hhmm(fim), pausasMin: Math.round((+t.pausadoMs || 0) / 60000), almoco: false, contentId: t.contentId || null, disciplina: t.disciplina || "", minutosManuais: null, origem: "timer" };
+  if (fim - ini >= 864e5) rec.minutosManuais = liq; // mais de 24h: o horário sozinho não dá conta
+  await put(rec); await del(t.id);
+  if (troca) return rec;
+  render();
+  if (liq >= 360) { sessionForm(rec); toast(`Bloco de ${hm(liq)} salvo. Confira os horários: o timer pode ter ficado ligado.`); }
+  else toast("Bloco salvo · " + hm(liq));
+  return rec;
+}
+function timerForm(troca, ctx = {}) {
+  const old = troca ? timer() : null, c0 = get(ctx.contentId), cw = currentWeek();
+  const ds = disciplinas(), d0 = c0 ? c0.disciplina : "";
+  const wIdx = Object.fromEntries(weeks().map((w, i) => [w.id, i]));
+  openDrawer(old ? "Trocar matéria" : "Iniciar estudo", `<form class="form" id="tmForm">
+    ${old ? `<div class="full banner"><span>O bloco de <b>${esc(old.disciplina || "estudo")}</b> (${hm(tLiq(old) / 60000)}) é salvo agora e o timer recomeça do zero na matéria escolhida.</span></div>` : ""}
+    ${fld("Matéria", `<select id="tm-d">${opts(ds.concat([["__outra", "Outra matéria…"]]), d0, "Escolha a matéria")}</select>`, "full")}
+    <div class="full" id="tm-ow" hidden>${fld("Nome da matéria", `<input id="tm-o" placeholder="Ex.: Atualidades">`)}</div>
+    <div class="full" id="tm-cw" hidden>${fld("Conteúdo do cronograma (opcional)", `<select id="tm-c"></select>`, "", "Com o conteúdo, as horas aparecem nele e contam na semana certa.")}</div></form>`,
+    `<button class="btn ghost" id="tmCancel">Cancelar</button><button class="btn primary" id="tmGo">${ic(old ? "swap" : "play")}${old ? "Trocar e continuar" : "Iniciar"}</button>`);
+  const fill = () => {
+    const d = $("#tm-d").value; $("#tm-ow").hidden = d !== "__outra";
+    const cs = d && d !== "__outra" ? contents().filter(c => c.disciplina === d) : [];
+    const k = c => cw && c.weekId === cw.id ? -1 : (wIdx[c.weekId] ?? 999);
+    cs.sort((a, b) => k(a) - k(b));
+    $("#tm-c").innerHTML = opts(cs.map(c => [c.id, (get(c.weekId) ? get(c.weekId).nome + " · " : "") + c.assunto]), c0 && c0.disciplina === d ? c0.id : "", "Sem conteúdo específico");
+    $("#tm-cw").hidden = !cs.length;
+  };
+  $("#tm-d").onchange = fill; fill();
+  $("#tmCancel").onclick = closeDrawer;
+  $("#tmGo").onclick = async () => {
+    let d = $("#tm-d").value; if (d === "__outra") d = $("#tm-o").value.trim();
+    if (!d) { toast(old ? "Escolha a nova matéria" : "Escolha a matéria"); return; }
+    const cid = $("#tm-c").value || null; closeDrawer();
+    await timerStart(d, cid); // o novo timer entra antes de o antigo sair, para o topo não piscar
+    if (old) { const r = await timerSave(old, true); toast((r ? `Bloco de ${old.disciplina} salvo · ${hm(sessionMin(r))}. ` : "") + "Timer em " + d); render(); }
+  };
+}
+setInterval(() => {
+  const t = S.ready && S.mode !== "login" ? timer() : null;
+  if (!t) { if (document.title !== BASE_TITLE) document.title = BASE_TITLE; return; }
+  const v = clk(tLiq(t));
+  document.querySelectorAll("[data-tm]").forEach(e => e.textContent = v);
+  document.querySelectorAll("[data-tmh]").forEach(e => e.textContent = hm(tLiq(t) / 60000));
+  document.querySelectorAll("[data-tmp]").forEach(e => e.textContent = Math.floor(tPausa(t) / 60000) + " min");
+  document.title = (t.pausaDesde ? "⏸ " : "⏱ ") + v + " · " + (t.disciplina || "Estudo");
+}, 1000);
 
 /* ---------- Biblioteca ---------- */
 let lf = { disc: "", week: "", q: "" };
@@ -1875,7 +1991,7 @@ function contentForm(c = {}, ctx = {}) {
   </div>
   <div class="sect"><h3>${ic("clock")}Tempo líquido · ${hm(contentMin(id))}</h3>
     ${ss.length ? ss.map(s => `<div class="row small"><span class="num">${fmtD(s.data)}</span><span class="muted">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}</span><b class="num" style="margin-left:auto">${hm(sessionMin(s))}</b><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></div>`).join("") : `<p class="muted small">Nenhum bloco de estudo ligado a este conteúdo.</p>`}
-    <div><button class="btn sm ghost" data-act="new-session" data-content="${id}">${ic("plus")}Registrar tempo</button></div>
+    <div class="row"><button class="btn sm ghost" data-act="new-session" data-content="${id}">${ic("plus")}Registrar tempo</button><button class="btn sm ghost" data-act="timer-new" data-content="${id}">${ic("play")}${timer() ? "Trocar o timer para este conteúdo" : "Iniciar timer"}</button></div>
   </div>
   <div class="sect"><h3>${ic("err")}Erros neste assunto · ${ers.length}</h3>
     ${ers.length ? `<div class="list">${ers.map(errItem).join("")}</div>` : ""}
@@ -2170,6 +2286,12 @@ document.addEventListener("click", async e => {
     case "done-review": reviewDone(get(id)); break;
     case "new-session": sessionForm({}, { contentId: a.dataset.content }); break;
     case "edit-session": sessionForm(get(id)); break;
+    case "timer-new": timerForm(!!timer(), { contentId: a.dataset.content }); break;
+    case "timer-switch": timerForm(true); break;
+    case "timer-pause": timerPause(); break;
+    case "timer-resume": timerResume(); break;
+    case "timer-stop": timerSave(timer()); break;
+    case "timer-go": closeDrawer(); go("horas"); break;
     case "save-closing": saveClosing(id, false); break;
     case "finish-week": saveClosing(id, true); break;
     case "week-summary": showWeekSummary(id); break;
