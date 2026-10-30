@@ -974,7 +974,7 @@ const HELP = {
   },
   revisoes: {
     serve: "Garante que você não esqueça o que já estudou. A revisão espaçada, em intervalos crescentes (por padrão 1, 7, 15 e 30 dias), fixa o conteúdo na memória de longo prazo.",
-    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›).", "Cada revisão é “por dificuldade” ou “por erros”. Use o filtro de tipo para ver só uma delas. Marcar “Precisa de revisão” num conteúdo também cria a revisão aqui."],
+    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Precisa mudar algo? O lápis em cada revisão permite editar assunto, disciplina, tipo, data, situação ou excluir.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›).", "Cada revisão é “por dificuldade” ou “por erros”. Use o filtro de tipo para ver só uma delas. Marcar “Precisa de revisão” num conteúdo também cria a revisão aqui."],
     dica: "O número rosa no menu mostra quantas revisões vencem hoje ou estão atrasadas. Os intervalos mudam em “Configurar intervalos”.",
   },
   desempenho: {
@@ -1138,7 +1138,7 @@ function revItem(r) {
   const t = TODAY(); const late = r.status !== "concluida" && r.prevista && r.prevista < t;
   return `<div class="li"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
     <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
-    ${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div>`;
+    <button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div>`;
 }
 
 /* ---------- Cronograma ---------- */
@@ -1461,28 +1461,43 @@ function vRevisoes() {
         const late = r.status !== "concluida" && r.prevista && r.prevista < t;
         return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status === "andamento" ? "warn" : "line",
           body: `<b>${esc(r.assunto || "Assunto")}</b><p>${tipoChip(r)}</p><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
-          open: `<span class="row" style="gap:6px">${mapBtn(r)}<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button></span>` };
+          open: `<span class="row" style="gap:6px"><button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button></span>` };
       }) : `<div class="grid g3">${grp("Atrasadas", late, "Nenhuma revisão atrasada.", "bad")}${grp("Para hoje", today, "Nada previsto para hoje.", "pink")}${grp("Futuras", fut, "Nenhuma revisão agendada.", "")}</div>`)
     + (done.length && VIEW.revisoes !== "kanban" ? `<div class="card"><div class="card-h"><h2>Concluídas recentemente</h2></div><div class="list">${done.map(revItem).join("")}</div></div>` : "") + (VIEW.revisoes === "kanban" ? sugHTML : "");
 }
+// pre.id = editar uma revisão existente (qualquer status); sem id = nova revisão
+const CORIG = ["conteudo", "marcado", "manual"]; // origens em que origemId aponta para um conteúdo
 function reviewForm(pre = {}) {
+  const ed = !!pre.id;
   const cOpts = contents().map(x => [x.id, (x.disciplina ? x.disciplina + " · " : "") + x.assunto]);
   const ints = settings().intervalos.split(/[,; ]+/).map(Number).filter(n => n > 0);
-  openDrawer("Nova revisão", `<form class="form" id="rvForm">
-    ${fld("A partir de um conteúdo", `<select class="pick-src" id="rv-c">${opts(cOpts, pre.contentId || "", "Escolher conteúdo (opcional)")}</select>`, "full")}
+  const c0 = pre.contentId || (ed && (get(pre.origemId) || {}).kind === "content" ? pre.origemId : "");
+  openDrawer(ed ? "Editar revisão" : "Nova revisão", `<form class="form" id="rvForm">
+    ${fld(ed ? "Conteúdo do cronograma" : "A partir de um conteúdo", `<select class="pick-src" id="rv-c">${opts(cOpts, c0 || "", "Escolher conteúdo (opcional)")}</select>`, "full")}
     ${fld("Assunto", `<input name="assunto" id="rv-a" value="${esc(pre.assunto)}">`)}
     ${fld("Disciplina", `<input name="disciplina" id="rv-d" list="dlDisc2" value="${esc(pre.disciplina)}">`)}
     ${fld("Tipo", `<select name="tipo" id="rv-ti">${opts(Object.entries(RTIPOS), RTIPOS[pre.tipo] ? pre.tipo : "dificuldade")}</select>`)}
     ${fld("Motivo", `<input name="motivo" id="rv-m" value="${esc(pre.motivo || "Revisão manual")}">`)}
     ${fld("Data prevista", `<input type="date" name="prevista" id="rv-p" value="${pre.prevista || addDays(TODAY(), ints[0] || 1)}">`)}
-    <label class="fld full toggle"><input type="checkbox" id="rv-ser"> <span>Criar série com os intervalos (${ints.join(", ")} dias a partir de hoje)</span></label>
+    ${ed ? fld("Situação", `<select name="status" id="rv-st">${opts(Object.entries(RSTATUS).map(([k, v]) => [k, v[0]]), pre.status || "pendente")}</select>`)
+      + (pre.status === "concluida" ? fld("Feita em", `<input type="date" name="concluidaEm" id="rv-ce" value="${pre.concluidaEm || TODAY()}">`) : "")
+      : `<label class="fld full toggle"><input type="checkbox" id="rv-ser"> <span>Criar série com os intervalos (${ints.join(", ")} dias a partir de hoje)</span></label>`}
     <datalist id="dlDisc2">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist></form>`,
-    `<button class="btn ghost" id="rvCancel">Cancelar</button><button class="btn primary" id="rvSave">Agendar</button>`);
-  $("#rv-c").onchange = ev => { const x = get(ev.target.value); if (x) { $("#rv-a").value = x.assunto; $("#rv-d").value = x.disciplina || ""; $("#rv-m").value = "Conteúdo concluído"; } };
+    `${ed ? `<button class="btn danger" id="rvDel" aria-label="Excluir revisão">${ic("trash")}</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="rvCancel">Cancelar</button><button class="btn primary" id="rvSave">${ed ? "Salvar" : "Agendar"}</button>`);
+  $("#rv-c").onchange = ev => { const x = get(ev.target.value); if (x) { $("#rv-a").value = x.assunto; $("#rv-d").value = x.disciplina || ""; if (!ed) $("#rv-m").value = "Conteúdo concluído"; } };
   $("#rvCancel").onclick = closeDrawer;
+  if (ed) $("#rvDel").onclick = async () => { if (await confirmBox("Excluir esta revisão?", "Ela sai da lista de revisões.")) { await del(pre.id); closeDrawer(); toast("Revisão excluída"); render(); } };
   $("#rvSave").onclick = async () => {
     const f = form($("#rvForm")); const cid = $("#rv-c").value;
     if (!f.assunto) { toast("Informe o assunto"); return; }
+    if (ed) {
+      if (!f.prevista) { toast("Informe a data prevista"); return; }
+      const rec = Object.assign({}, get(pre.id) || pre, { assunto: f.assunto, disciplina: f.disciplina, tipo: f.tipo, motivo: f.motivo, prevista: f.prevista, status: f.status });
+      rec.concluidaEm = f.status === "concluida" ? (f.concluidaEm || pre.concluidaEm || TODAY()) : "";
+      // ligação com o conteúdo: só mexe quando a revisão veio de conteúdo (ou é manual); as que vieram de erro, simulado ou outra revisão mantêm a origem
+      if (CORIG.includes(rec.origem || "manual")) { rec.origemId = cid || null; rec.origem = cid ? (rec.origem === "marcado" ? "marcado" : "conteudo") : "manual"; }
+      await put(rec); closeDrawer(); toast("Revisão atualizada"); render(); return;
+    }
     const dates = $("#rv-ser").checked ? ints.map(n => addDays(TODAY(), n)) : [f.prevista];
     for (const d of dates) await put({ id: uid("rv"), kind: "review", assunto: f.assunto, disciplina: f.disciplina, motivo: f.motivo, tipo: f.tipo, prevista: d, origem: cid ? "conteudo" : (pre.origem || "manual"), origemId: cid || pre.origemId || null, status: "pendente" });
     closeDrawer(); toast(dates.length > 1 ? dates.length + " revisões agendadas" : "Revisão agendada"); render();
@@ -1495,8 +1510,9 @@ function reviewDone(r) {
       ${fld("Resultado", `<select name="resultado" id="rd-r">${opts(["Domino o assunto", "Ainda tenho dúvidas", "Preciso reestudar"], r.resultado || "")}</select>`, "full")}
       ${fld("Dificuldades encontradas", `<textarea name="dificuldades" id="rd-d">${esc(r.dificuldades)}</textarea>`, "full")}
       ${fld("Nova revisão em", `<input type="date" name="nova" id="rd-n" value="">`, "", "Deixe vazio se não precisar")}
-    </form>`, `<button class="btn danger" id="rdDel">${ic("trash")}</button><span style="flex:1"></span><button class="btn ghost" id="rdCancel">Cancelar</button><button class="btn primary" id="rdSave">${ro ? "Salvar" : "Concluir revisão"}</button>`);
+    </form>`, `<button class="btn danger" id="rdDel">${ic("trash")}</button><button class="btn ghost" id="rdEdit">${ic("edit")}Editar</button><span style="flex:1"></span><button class="btn ghost" id="rdCancel">Cancelar</button><button class="btn primary" id="rdSave">${ro ? "Salvar" : "Concluir revisão"}</button>`);
   $("#rdCancel").onclick = closeDrawer;
+  $("#rdEdit").onclick = () => reviewForm(r);
   $("#rdDel").onclick = async () => { if (await confirmBox("Excluir esta revisão?", "Ela sai da lista de revisões.")) { await del(r.id); closeDrawer(); render(); } };
   $("#rdSave").onclick = async () => {
     const f = form($("#rdForm"));
@@ -2348,6 +2364,7 @@ document.addEventListener("click", async e => {
     case "new-review": { const c = get(a.dataset.content); reviewForm(c ? { contentId: c.id, assunto: c.assunto, disciplina: c.disciplina, motivo: "Conteúdo concluído" } : {}); break; }
     case "sug-review": reviewForm({ assunto: a.dataset.a, disciplina: a.dataset.d, motivo: "Sugestão de reforço", tipo: a.dataset.t }); break;
     case "done-review": reviewDone(get(id)); break;
+    case "edit-review": reviewForm(get(id)); break;
     case "new-session": sessionForm({}, { contentId: a.dataset.content }); break;
     case "edit-session": sessionForm(get(id)); break;
     case "timer-new": timerForm(!!timer(), { contentId: a.dataset.content }); break;
