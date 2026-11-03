@@ -74,6 +74,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tm-chip{display:flex;align-items:center;gap:2px;background:var(--white);border-radius:99px;padding:3px;box-shadow:var(--shadow);min-width:0}
 .tm-chip[hidden]{display:none}
 .wk-past{padding:14px 20px}
+.goal-pair{display:flex;gap:18px;flex-wrap:wrap}
+.goal-pair > div{display:flex;flex-direction:column}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px}
+.split-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.split-h .num{margin-left:auto}
+.split-row.fds .bar i{opacity:.55}
+@media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
 .app-tip img{border-radius:10px;flex:none}
 .app-tip svg{width:16px;height:16px;vertical-align:-3px;color:var(--pink-ink)}
 .plan-info{padding:14px 20px}
@@ -623,7 +630,7 @@ const tipoChip = r => `<span class="chip ${rTipo(r) === "erros" ? "bad" : "pink"
 const S = { docs: new Map(), mode: "loading", db: null, col: null, assets: null, downloads: null, ready: false };
 const all = k => [...S.docs.values()].filter(d => d.kind === k);
 const get = id => S.docs.get(id);
-const settings = () => Object.assign({ metaDiaria: 480, almocoMin: 60, almocoPadrao: true, intervalos: "1, 7, 15, 30" }, get("settings") || {});
+const settings = () => Object.assign({ metaDiaria: 480, metaFds: 0, almocoMin: 60, almocoPadrao: true, intervalos: "1, 7, 15, 30" }, get("settings") || {});
 let LS_KEY = "central-estudos-local-v1";
 
 function lsLoad() { try { const raw = localStorage.getItem(LS_KEY); if (raw) JSON.parse(raw).forEach(d => S.docs.set(d.id, d)); } catch (e) { } }
@@ -786,7 +793,15 @@ function sessionMin(s) {
   if (s.almoco) m -= (+settings().almocoMin || 0);
   return Math.max(0, m);
 }
-function weekOfDate(d) { return weeks().find(w => w.inicio && w.fim && w.inicio <= d && d <= w.fim); }
+const isFds = d => { const k = new Date(d + "T12:00:00").getDay(); return k === 0 || k === 6; };
+// domingo que fecha a semana: as semanas do plano vão de seg a sex, e o sábado/domingo seguintes contam nela
+const domingoDe = fim => addDays(fim, (7 - new Date(fim + "T12:00:00").getDay()) % 7);
+function weekOfDate(d) {
+  const ws = weeks();
+  return ws.find(w => w.inicio && w.fim && w.inicio <= d && d <= w.fim) || (isFds(d) ? ws.find(w => w.inicio && w.fim && w.fim < d && d <= domingoDe(w.fim)) : undefined);
+}
+// meta do dia: dia útil (seg a sex) ou fim de semana (sáb e dom)
+const metaDoDia = d => (isFds(d) ? +settings().metaFds : +settings().metaDiaria) || 0;
 function sessionWeek(s) {
   if (s.contentId && get(s.contentId)) return get(s.contentId).weekId;
   const w = weekOfDate(s.data); return w ? w.id : null;
@@ -796,13 +811,14 @@ function weekStats(wid) {
   const cs = contentsOf(wid);
   const done = cs.filter(c => c.status === "concluido").length;
   const and = cs.filter(c => c.status === "andamento").length;
-  const min = sessions().filter(s => sessionWeek(s) === wid).reduce((t, s) => t + sessionMin(s), 0);
+  const ss = sessions().filter(s => sessionWeek(s) === wid);
+  const min = ss.reduce((t, s) => t + sessionMin(s), 0), minFds = ss.filter(s => s.data && isFds(s.data)).reduce((t, s) => t + sessionMin(s), 0);
   const qr = cs.reduce((t, c) => t + (+c.qResolvidas || 0), 0);
   const qc = cs.reduce((t, c) => t + (+c.qCorretas || 0), 0);
   const w = get(wid) || {};
-  const meta = (+w.metaHoras || 0) * 60;
+  const meta = (+w.metaHoras || 0) * 60, metaFds = Math.min(meta, (+w.metaFds || 0) * 60);
   const errs = errors().filter(e => e.contentId && get(e.contentId) && get(e.contentId).weekId === wid);
-  return { total: cs.length, done, and, pend: cs.length - done - and, pct: cs.length ? done / cs.length * 100 : 0, min, meta, qr, qc, acc: pct1(qc, qr), errs };
+  return { total: cs.length, done, and, pend: cs.length - done - and, pct: cs.length ? done / cs.length * 100 : 0, min, meta, minFds, minUteis: min - minFds, metaFds, metaUteis: meta - metaFds, qr, qc, acc: pct1(qc, qr), errs };
 }
 function overall() {
   const cs = contents();
@@ -816,7 +832,7 @@ function overall() {
 }
 function currentWeek() {
   const t = TODAY(); const ws = weeks();
-  return ws.find(w => w.inicio && w.fim && w.inicio <= t && t <= w.fim) || ws.find(w => weekStats(w.id).pct < 100) || ws[ws.length - 1];
+  return weekOfDate(t) || ws.find(w => weekStats(w.id).pct < 100) || ws[ws.length - 1];
 }
 const disciplinas = () => [...new Set(contents().map(c => c.disciplina).concat(errors().map(e => e.disciplina)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
 function bySubject() {
@@ -914,7 +930,7 @@ const empty = (icon, title, text, btn) => `<div class="empty"><div class="art">$
 const form = el => Object.fromEntries([...el.querySelectorAll("[name]")].map(i => [i.name, i.type === "checkbox" ? i.checked : i.value.trim()]));
 
 /* ---- gráficos SVG ---- */
-function barChart(labels, values, { fmt = v => v, target = null, h = 180 } = {}) {
+function barChart(labels, values, { fmt = v => v, target = null, h = 180, alt = null } = {}) {
   if (!values.length) return "";
   const W = 560, H = h, L = 36, B = 24, T = 10, R = 8;
   const max = Math.max(1, ...values, ...(target ? target : [0])) * 1.1;
@@ -924,7 +940,7 @@ function barChart(labels, values, { fmt = v => v, target = null, h = 180 } = {})
   for (let i = 0; i <= 3; i++) { const v = max / 1.1 * i / 3; g += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${fmt(v)}</text>`; }
   values.forEach((v, i) => {
     const x = L + i * bw + bw * .2, w = bw * .6;
-    g += `<rect x="${x}" y="${y(v)}" width="${w}" height="${Math.max(0, H - B - y(v))}" rx="4" fill="var(--pink)"><title>${esc(labels[i])}: ${fmt(v)}</title></rect>`;
+    g += `<rect x="${x}" y="${y(v)}" width="${w}" height="${Math.max(0, H - B - y(v))}" rx="4" fill="var(--pink)"${alt && alt[i] ? ' fill-opacity=".4"' : ""}><title>${esc(labels[i])}: ${fmt(v)}</title></rect>`;
     if (target && target[i]) g += `<line x1="${x - 3}" x2="${x + w + 3}" y1="${y(target[i])}" y2="${y(target[i])}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3 2"/>`;
     g += `<text x="${x + w / 2}" y="${H - 8}" text-anchor="middle">${esc(labels[i])}</text>`;
   });
@@ -1007,7 +1023,7 @@ const HELP = {
   },
   horas: {
     serve: "Mede o tempo de estudo real, sem as pausas, e compara com a sua meta diária. As horas líquidas mostram se a rotina planejada está sendo cumprida.",
-    fazer: ["Clique em “Iniciar estudo”, escolha a matéria e o timer começa. Use Pausar/Retomar nas paradas e “Encerrar” no fim: o bloco é salvo sozinho, já sem as pausas.", "O timer aparece no topo de todas as abas e continua contando mesmo se fechar a página. Dá para iniciar no computador e encerrar pelo celular.", "Mudou de matéria? Use “Trocar matéria”: o bloco atual é salvo e o timer recomeça na nova.", "Se preferir lançar depois, use “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar metas” para mudar a meta diária e a da semana: a meta da semana acompanha a diária (diária × dias de estudo) ou recebe um valor seu, e vale em todas as abas."],
+    fazer: ["Clique em “Iniciar estudo”, escolha a matéria e o timer começa. Use Pausar/Retomar nas paradas e “Encerrar” no fim: o bloco é salvo sozinho, já sem as pausas.", "O timer aparece no topo de todas as abas e continua contando mesmo se fechar a página. Dá para iniciar no computador e encerrar pelo celular.", "Mudou de matéria? Use “Trocar matéria”: o bloco atual é salvo e o timer recomeça na nova.", "Se preferir lançar depois, use “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar metas” para definir a meta do dia útil (seg a sex) e a do fim de semana (sáb e dom). A meta da semana soma as duas (ou recebe um valor seu) e vale em todas as abas.", "O sábado e o domingo logo depois de uma semana contam nela. O quadro “Dias úteis × fim de semana” mostra quanto de cada meta já foi cumprido."],
     dica: "Vincule o bloco a um conteúdo para as horas aparecerem nele e na semana certa.",
   },
   biblioteca: {
@@ -1173,7 +1189,7 @@ function revItem(r) {
 let cf = { disc: "", status: "", q: "", sem: "atual" };
 try { cf.sem = localStorage.getItem("central-estudos-crono-semanas") || "atual"; } catch (e) { }
 const setCfSem = v => { cf.sem = v; try { localStorage.setItem("central-estudos-crono-semanas", v); } catch (e) { } render(); };
-const wPassada = w => !!(w.fim && w.fim < TODAY());
+const wPassada = w => !!(w.fim && domingoDe(w.fim) < TODAY()); // a semana só "passa" depois do fim de semana dela
 let planOpen = false;
 document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("plan-info")) planOpen = e.target.open; }, true);
 function vCrono() {
@@ -1229,7 +1245,7 @@ function vSemanas() {
   const gTitle = k => wGroup === "dia" && /^\d{4}-/.test(k) ? `${WEEKDAYS[new Date(k + "T12:00:00").getDay()]} ${fmtD(k)}${k === TODAY() ? ` <span class="chip ok" style="text-transform:none;letter-spacing:0"><i></i>hoje</span>` : ""}${daySess(k) ? ` <span class="chip pink" style="text-transform:none;letter-spacing:0">${hm(daySess(k))} estudadas</span>` : ""}` : esc(k);
   const prev = ws[idx - 1], next = ws[idx + 1];
   const head = `<div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <div class="card-h" style="margin:0"><div><span class="eyebrow">Semana ${idx + 1} de ${ws.length}</span><h1>${esc(w.nome)}</h1><p>${w.inicio ? fmtDY(w.inicio) + " a " + fmtDY(w.fim) : "Período a definir"} · meta ${w.metaHoras ? fmtH(+w.metaHoras) : "não definida"} <button class="linkbtn" data-act="hours-config" data-week="${w.id}">ajustar</button></p></div>
+    <div class="card-h" style="margin:0"><div><span class="eyebrow">Semana ${idx + 1} de ${ws.length}</span><h1>${esc(w.nome)}</h1><p>${w.inicio ? fmtDY(w.inicio) + " a " + fmtDY(w.fim) : "Período a definir"} · meta ${w.metaHoras ? fmtH(+w.metaHoras) + (+w.metaFds ? ` (${fmtH(+w.metaFds)} no fim de semana)` : "") : "não definida"} <button class="linkbtn" data-act="hours-config" data-week="${w.id}">ajustar</button></p></div>
       <div class="row">${prev ? `<button class="btn sm ghost" data-act="sel-week" data-id="${prev.id}">‹ Anterior</button>` : ""}${next ? `<button class="btn sm ghost" data-act="sel-week" data-id="${next.id}">Próxima ›</button>` : ""}<button class="icon-btn" data-act="edit-week" data-id="${w.id}" aria-label="Editar semana">${ic("edit")}</button></div></div>
     <div class="row"><div style="flex:1;min-width:160px">${bar(st.pct)}</div><b class="num">${Math.round(st.pct)}%</b><span class="muted small">${st.done} concluídos · ${st.and} em andamento · ${st.pend} pendentes</span></div>
   </div>`;
@@ -1239,7 +1255,7 @@ function vSemanas() {
   const reg = `<div class="grid g2">
     <div class="card"><div class="card-h"><h2>Horas e questões</h2><button class="btn sm ghost" data-act="new-session" data-week="${w.id}">${ic("clock")}Registrar horas</button></div>
       <div class="grid g2" style="gap:10px">
-        <div><span class="muted small">Horas líquidas</span><div class="num" style="font-size:1.4rem;font-weight:600">${hm(st.min)}</div>${st.meta ? bar(st.min / st.meta * 100) : ""}<span class="muted small">${st.meta ? `${Math.round(st.min / st.meta * 100)}% da meta de ${hm(st.meta)}` : "sem meta"}</span></div>
+        <div><span class="muted small">Horas líquidas</span><div class="num" style="font-size:1.4rem;font-weight:600">${hm(st.min)}</div>${st.meta ? bar(st.min / st.meta * 100) : ""}<span class="muted small">${st.meta ? `${Math.round(st.min / st.meta * 100)}% da meta de ${hm(st.meta)}` : "sem meta"}</span>${st.metaFds || st.minFds ? `<span class="muted small" style="display:block">dias úteis ${hm(st.minUteis)}${st.metaUteis ? "/" + hm(st.metaUteis) : ""} · fim de semana ${hm(st.minFds)}${st.metaFds ? "/" + hm(st.metaFds) : ""}</span>` : ""}</div>
         <div><span class="muted small">Questões</span><div class="num" style="font-size:1.4rem;font-weight:600">${st.qc}/${st.qr}</div><span class="muted small">acertos ${fmtPct(st.acc)}</span></div>
       </div></div>
     <div class="card"><div class="card-h"><h2>Materiais da semana</h2><button class="btn sm ghost" data-go="biblioteca">Biblioteca</button></div>
@@ -1257,7 +1273,7 @@ function closingSection(w) {
   const fin = c.finalizadaEm;
   return `<div class="card" id="closing"><div class="card-h"><div><span class="eyebrow">Fechamento da semana</span><h2>${fin ? "Semana finalizada em " + fmtDY(fin.slice(0, 10)) : "Como foi esta semana"}</h2></div>${fin ? `<span class="chip ok"><i></i>Finalizada</span>` : ""}</div>
     <div class="summary-hero" style="margin-bottom:16px">
-      <div><label>Horas líquidas</label><b class="num">${hm(st.min)}</b><small>${st.meta ? Math.round(st.min / st.meta * 100) + "% da meta (" + hm(st.meta) + ")" : "meta não definida"}</small></div>
+      <div><label>Horas líquidas</label><b class="num">${hm(st.min)}</b><small>${st.meta ? Math.round(st.min / st.meta * 100) + "% da meta (" + hm(st.meta) + ")" : "meta não definida"}${st.metaFds || st.minFds ? ` · fim de semana ${hm(st.minFds)}${st.metaFds ? " de " + hm(st.metaFds) : ""}` : ""}</small></div>
       <div><label>Questões</label><b class="num">${st.qr}</b><small>${st.qc} corretas</small></div>
       <div><label>Acertos</label><b class="num">${fmtPct(st.acc)}</b><small>corretas ÷ resolvidas</small></div>
       <div><label>Conteúdos</label><b class="num">${st.done}/${st.total}</b><small>${st.pend + st.and} em aberto</small></div>
@@ -1617,7 +1633,7 @@ function hoursPie(w) {
       : `<p class="muted small">Registre blocos de estudo (botão “Novo bloco”) para ver como o tempo se divide entre as disciplinas.</p>`}</div>`;
 }
 function vHoras() {
-  const st = settings(); const meta = +st.metaDiaria || 0;
+  const st = settings(); const meta = metaDoDia(hDay), fds = isFds(hDay);
   const day = sessions().filter(s => s.data === hDay);
   const tot = day.reduce((a, s) => a + sessionMin(s), 0);
   const w = weekOfDate(hDay);
@@ -1627,13 +1643,14 @@ function vHoras() {
   return `<div class="page-h"><div><span class="eyebrow">Horas líquidas</span><h1>Controle de tempo</h1><p>Cada bloco desconta pausas e, se marcado, o almoço de ${st.almocoMin} min. Quem registra o almoço como pausa não marca o desconto, para não contar duas vezes.</p></div>
     <div class="row"><div class="seg" role="group" aria-label="Visualização"><button data-act="hview" data-v="lista" aria-pressed="${hView === "lista"}">Lista</button><button data-act="hview" data-v="graficos" aria-pressed="${hView === "graficos"}">Gráficos</button></div><input type="date" class="inp" id="hDay" value="${hDay}" style="width:auto"><button class="btn ${tm ? "primary" : "ghost"}" data-act="new-session">${ic("plus")}Novo bloco</button>${tm ? "" : `<button class="btn primary" data-act="timer-new">${ic("play")}Iniciar estudo</button>`}</div></div>
     ${tm ? timerCard(tm) : ""}
-    <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}${tm && hDay === TODAY() ? ` · +<span data-tmh>${hm(tLiq(tm) / 60000)}</span> no timer` : ""}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
-      <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
+    <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)} · ${fds ? "fim de semana" : "dia útil"}</label><b class="num">${hm(tot)}</b><small>${meta ? `meta do ${fds ? "fim de semana" : "dia útil"} ${hm(meta)}` : "fim de semana sem meta"}${tm && hDay === TODAY() ? ` · +<span data-tmh>${hm(tLiq(tm) / 60000)}</span> no timer` : ""}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
+      <div class="kpi"><label>Saldo do dia</label>${meta ? `<b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small>` : `<b class="num" style="color:var(--ok)">+${hm(tot)}</b><small>sem meta hoje · tudo é extra</small>`}</div>
       <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? ` · meta ${fmtH(+w.metaHoras)} · ${Math.round(wTot / (w.metaHoras * 60) * 100)}%` : "") : "data fora das semanas"}</small></div>
-      <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small>${w ? `meta da semana ${w.metaHoras ? fmtH(+w.metaHoras) : "não definida"}` : ""}</small><small><button class="btn sm ghost" data-act="hours-config" ${w ? `data-week="${w.id}"` : ""} style="margin-top:4px">Ajustar metas</button></small></div></div>
+      <div class="kpi"><label>Metas por dia</label><div class="goal-pair"><div><b class="num">${hm(+st.metaDiaria || 0)}</b><small>dia útil</small></div><div><b class="num">${hm(+st.metaFds || 0)}</b><small>fim de semana</small></div></div><small>${w ? `meta da semana ${w.metaHoras ? fmtH(+w.metaHoras) : "não definida"}` : ""}</small><small><button class="btn sm ghost" data-act="hours-config" ${w ? `data-week="${w.id}"` : ""} style="margin-top:4px">Ajustar metas</button></small></div></div>
+    ${weekSplit(w)}
     ${hView === "graficos" ? hoursPie(hWeek === "plano" ? null : get(hWeek) || w) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
       ${day.length ? `<div class="tbl-wrap"><table><thead><tr><th>Horário</th><th>Assunto</th><th class="n">Pausas</th><th class="n">Líquido</th><th></th></tr></thead><tbody>${day.map(s => { const c = get(s.contentId); return `<tr><td class="num">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}${s.almoco ? ' <span class="chip">almoço</span>' : ""}</td><td>${esc(c ? c.assunto : s.disciplina || "—")}</td><td class="n">${s.pausasMin || 0}m</td><td class="n"><b>${hm(sessionMin(s))}</b></td><td><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted small">Nenhum bloco neste dia. Registre início e término do estudo.</p>`}</div>
-    <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`}`;
+    <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta do dia · barras claras = fim de semana</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(d => metaDoDia(d) / 60), alt: last7.map(isFds) })}</div></div>`}`;
 }
 function sessionForm(s = {}, ctx = {}) {
   const isNew = !s.id;
@@ -1753,48 +1770,65 @@ setInterval(() => {
 }, 1000);
 
 /* ---------- Metas de horas ---------- */
-// meta da semana = meta diária × dias de estudo (seg a sex dentro do período da semana), como na planilha (8h × 5 = 40h)
+// meta da semana = meta do dia útil × dias úteis + meta do fim de semana × dias de fim de semana (como na planilha: 8h × 5 = 40h)
 function diasEstudo(w) {
   if (!w || !w.inicio || !w.fim) return 5;
   let n = 0; for (let d = w.inicio; d <= w.fim; d = addDays(d, 1)) { const k = new Date(d + "T12:00:00").getDay(); if (k > 0 && k < 6) n++; }
   return n || 5;
 }
+function diasFds(w) {
+  if (!w || !w.inicio || !w.fim) return 2;
+  let n = 0; for (let d = w.inicio; d <= domingoDe(w.fim); d = addDays(d, 1)) if (isFds(d)) n++;
+  return n;
+}
 const fmtH = h => (Math.round(h * 100) / 100).toLocaleString("pt-BR") + "h";
+function weekSplit(w) {
+  if (!w) return "";
+  const st = weekStats(w.id);
+  const row = (l, sub, v, m, cls) => `<div class="split-row ${cls}"><div class="split-h"><b>${l}</b><span class="muted small">${sub}</span><span class="num">${hm(v)}${m ? ` de ${hm(m)} · <b>${Math.round(v / m * 100)}%</b>` : ` · <span class="muted">sem meta</span>`}</span></div>${bar(m ? v / m * 100 : 0)}</div>`;
+  return `<div class="card"><div class="card-h"><div><h2>Dias úteis × fim de semana</h2><p>${esc(w.nome)}${w.inicio ? ` · ${fmtD(w.inicio)} a ${fmtD(domingoDe(w.fim))}` : ""} · total ${hm(st.min)}${st.meta ? ` de ${hm(st.meta)}` : ""}</p></div><button class="btn sm ghost" data-act="hours-config" data-week="${w.id}">Ajustar metas</button></div>
+    <div class="split">${row("Dias úteis", "seg a sex", st.minUteis, st.metaUteis, "")}${row("Fim de semana", "sáb e dom", st.minFds, st.metaFds, "fds")}</div></div>`;
+}
 function goalsForm(wid) {
   const s = settings(), ws = weeks(), w0 = get(wid) || currentWeek() || ws[0];
   const i0 = Math.max(0, ws.indexOf(w0));
-  let manual = false; // a meta da semana só segue a diária enquanto não for digitada à mão
+  let manual = false; // a meta da semana só segue as diárias enquanto não for digitada à mão
   openDrawer("Metas de horas", `<form class="form" id="goalForm">
-    ${fld("Meta diária (horas)", `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-d" value="${(+s.metaDiaria || 0) / 60}">`)}
-    ${w0 ? fld(`Meta da ${esc(w0.nome)} (horas)`, `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-w" value="${w0.metaHoras ?? ""}">`, "", `<span id="mg-h"></span>`) : ""}
+    ${fld("Meta por dia útil (seg a sex)", `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-d" value="${(+s.metaDiaria || 0) / 60}">`, "", "horas por dia")}
+    ${fld("Meta por dia no fim de semana (sáb e dom)", `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-f" value="${(+s.metaFds || 0) / 60}">`, "", "horas por dia · 0 = sem meta")}
+    ${w0 ? fld(`Meta da ${esc(w0.nome)} (horas)`, `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-w" value="${w0.metaHoras ?? ""}">`, "full", `<span id="mg-h"></span>`) : ""}
     ${w0 ? fld("Aplicar a meta da semana em", `<select id="mg-a">${opts([["daqui", `${w0.nome} e as seguintes`], ["so", `Só na ${w0.nome}`], ["todas", "Todas as semanas"], ["nao", "Não mudar as semanas"]], "daqui")}</select>`, "full") : ""}
     <div class="full banner" id="mg-p"></div>
     ${fld("Desconto do almoço (min)", `<input type="number" min="0" name="almocoMin" id="st-a" value="${s.almocoMin}">`)}
     <label class="fld full toggle"><input type="checkbox" name="almocoPadrao" id="st-ap" ${s.almocoPadrao ? "checked" : ""}><span>Novos blocos já vêm com o desconto do almoço marcado</span></label>
   </form>`, `<button class="btn ghost" id="mgC">Cancelar</button><button class="btn primary" id="mgS">Salvar metas</button>`);
   // semanas afetadas e a nova meta de cada uma
+  const auto = (w, d, f) => d * diasEstudo(w) + f * diasFds(w);
   const plan = () => {
-    const d = +$("#mg-d").value || 0, a = w0 ? $("#mg-a").value : "nao", wv = w0 ? $("#mg-w").value : "";
+    const d = +$("#mg-d").value || 0, f = +$("#mg-f").value || 0, a = w0 ? $("#mg-a").value : "nao", wv = w0 ? $("#mg-w").value : "";
     const alvo = a === "nao" ? [] : a === "so" ? [w0] : a === "todas" ? ws : ws.slice(i0);
-    return alvo.map(w => ({ w, de: w.metaHoras, para: manual && wv !== "" ? +wv : d * diasEstudo(w) })).filter(x => (+x.de || 0) !== x.para);
+    return alvo.map(w => { const para = manual && wv !== "" ? +wv : auto(w, d, f); return { w, de: w.metaHoras, para, fds: Math.min(para, f * diasFds(w)) }; })
+      .filter(x => (+x.de || 0) !== x.para || (+x.w.metaFds || 0) !== x.fds);
   };
   const upd = () => {
-    const d = +$("#mg-d").value || 0;
-    if (w0 && !manual) $("#mg-w").value = d * diasEstudo(w0);
-    if (w0) $("#mg-h").textContent = manual ? "Valor digitado: vale igual para todas as semanas escolhidas." : `${fmtH(d)} × ${diasEstudo(w0)} dias de estudo (seg a sex)`;
+    const d = +$("#mg-d").value || 0, f = +$("#mg-f").value || 0;
+    if (w0 && !manual) $("#mg-w").value = auto(w0, d, f);
+    if (w0) $("#mg-h").textContent = manual ? "Valor digitado: vale igual para todas as semanas escolhidas (o fim de semana continua com a meta acima)." : `${fmtH(d)} × ${diasEstudo(w0)} dias úteis` + (f ? ` + ${fmtH(f)} × ${diasFds(w0)} dias de fim de semana` : " · fim de semana sem meta");
     const ch = plan();
-    $("#mg-p").innerHTML = `<span>${ch.length ? `<b>Vai atualizar ${ch.length} semana${ch.length === 1 ? "" : "s"}:</b> ${ch.map(x => `${esc(x.w.nome)} ${x.de ? fmtH(+x.de) : "sem meta"} → <b>${fmtH(x.para)}</b>`).join(" · ")}. A mudança aparece em todas as abas (Visão geral, Semanas, Horas e Fechamentos).` : "Nenhuma meta de semana muda."}</span>`;
+    $("#mg-p").innerHTML = `<span>${ch.length ? `<b>Vai atualizar ${ch.length} semana${ch.length === 1 ? "" : "s"}:</b> ${ch.map(x => `${esc(x.w.nome)} ${x.de ? fmtH(+x.de) : "sem meta"} → <b>${fmtH(x.para)}</b>${x.fds ? ` (${fmtH(x.fds)} no fim de semana)` : ""}`).join(" · ")}. A mudança aparece em todas as abas (Visão geral, Semanas, Horas e Fechamentos).` : "Nenhuma meta de semana muda."}</span>`;
   };
-  $("#mg-d").addEventListener("input", upd);
+  $("#mg-d").addEventListener("input", upd); $("#mg-f").addEventListener("input", upd);
   if (w0) { $("#mg-w").addEventListener("input", () => { manual = true; upd(); }); $("#mg-a").onchange = upd; }
   upd();
   $("#mgC").onclick = closeDrawer;
   $("#mgS").onclick = async () => {
-    const dv = $("#mg-d").value; if (dv === "" || +dv < 0) { toast("Informe a meta diária"); return; }
+    const dv = $("#mg-d").value, fv = $("#mg-f").value;
+    if (dv === "" || +dv < 0) { toast("Informe a meta do dia útil"); return; }
+    if (fv === "" || +fv < 0) { toast("Informe a meta do fim de semana (0 se não houver)"); return; }
     if (w0 && manual && ($("#mg-w").value === "" || +$("#mg-w").value < 0)) { toast("Informe a meta da semana"); return; }
     const f = form($("#goalForm")), ch = plan();
-    await put(Object.assign({}, get("settings") || {}, { id: "settings", kind: "settings", metaDiaria: Math.round(+dv * 60), almocoMin: +f.almocoMin || 0, almocoPadrao: f.almocoPadrao }));
-    for (const x of ch) await put(Object.assign({}, get(x.w.id), { metaHoras: x.para }));
+    await put(Object.assign({}, get("settings") || {}, { id: "settings", kind: "settings", metaDiaria: Math.round(+dv * 60), metaFds: Math.round(+fv * 60), almocoMin: +f.almocoMin || 0, almocoPadrao: f.almocoPadrao }));
+    for (const x of ch) await put(Object.assign({}, get(x.w.id), { metaHoras: x.para, metaFds: x.fds }));
     closeDrawer(); toast("Metas salvas" + (ch.length ? ` · ${ch.length} semana${ch.length === 1 ? "" : "s"} atualizada${ch.length === 1 ? "" : "s"}` : "")); render();
   };
 }
@@ -2083,8 +2117,8 @@ function vFechamentos() {
     <div class="card"><div class="card-h"><h2>Acertos por semana</h2></div>${lineChart(lbl, st.map(x => x.s.acc))}</div>
     <div class="card"><div class="card-h"><h2>Questões resolvidas</h2></div>${barChart(lbl, st.map(x => x.s.qr), { fmt: v => Math.round(v) })}</div>
     <div class="card"><div class="card-h"><h2>Assuntos com mais revisões</h2></div>${revSubj.length ? hbars(revSubj.map(r => ({ l: r.assunto, p: r.revisoes / maxR * 100, v: r.revisoes }))) : `<p class="muted small">Ainda sem revisões registradas.</p>`}</div></div>
-    <div class="card"><div class="card-h"><h2>Resumo por semana</h2></div><div class="tbl-wrap"><table><thead><tr><th>Semana</th><th>Período</th><th class="n">Horas</th><th class="n">Meta</th><th class="n">% meta</th><th class="n">Questões</th><th class="n">Acertos</th><th class="n">Concluídos</th><th>Fechamento</th></tr></thead><tbody>
-    ${st.map(({ w, s, c }) => `<tr><td><button class="btn sm ghost" data-go="semanas" data-week="${w.id}">${esc(w.nome)}</button></td><td class="num small">${w.inicio ? fmtD(w.inicio) + "–" + fmtD(w.fim) : "—"}</td><td class="n">${hm(s.min)}</td><td class="n">${s.meta ? hm(s.meta) : "—"}</td><td class="n">${s.meta ? Math.round(s.min / s.meta * 100) + "%" : "—"}</td><td class="n">${s.qr}</td><td class="n">${fmtPct(s.acc)}</td><td class="n">${s.done}/${s.total}</td><td>${c && c.finalizadaEm ? `<button class="chip ok" style="border:0;cursor:pointer" data-act="week-summary" data-id="${w.id}"><i></i>Ver resumo</button>` : `<span class="chip">Aberto</span>`}</td></tr>`).join("")}
+    <div class="card"><div class="card-h"><h2>Resumo por semana</h2></div><div class="tbl-wrap"><table><thead><tr><th>Semana</th><th>Período</th><th class="n">Horas</th><th class="n">Meta</th><th class="n">% meta</th><th class="n">Fim de semana</th><th class="n">Questões</th><th class="n">Acertos</th><th class="n">Concluídos</th><th>Fechamento</th></tr></thead><tbody>
+    ${st.map(({ w, s, c }) => `<tr><td><button class="btn sm ghost" data-go="semanas" data-week="${w.id}">${esc(w.nome)}</button></td><td class="num small">${w.inicio ? fmtD(w.inicio) + "–" + fmtD(w.fim) : "—"}</td><td class="n">${hm(s.min)}</td><td class="n">${s.meta ? hm(s.meta) : "—"}</td><td class="n">${s.meta ? Math.round(s.min / s.meta * 100) + "%" : "—"}</td><td class="n">${s.minFds || s.metaFds ? hm(s.minFds) + (s.metaFds ? " / " + hm(s.metaFds) : "") : "—"}</td><td class="n">${s.qr}</td><td class="n">${fmtPct(s.acc)}</td><td class="n">${s.done}/${s.total}</td><td>${c && c.finalizadaEm ? `<button class="chip ok" style="border:0;cursor:pointer" data-act="week-summary" data-id="${w.id}"><i></i>Ver resumo</button>` : `<span class="chip">Aberto</span>`}</td></tr>`).join("")}
     </tbody></table></div></div>`;
 }
 
@@ -2096,7 +2130,8 @@ function weekForm(w = {}) {
     ${fld("Nome da semana", `<input name="nome" id="w-n" value="${esc(w.nome || "Semana " + (ws.length + 1))}">`, "full")}
     ${fld("Início", `<input type="date" name="inicio" id="w-i" value="${ini}">`)}
     ${fld("Fim", `<input type="date" name="fim" id="w-f" value="${w.fim || addDays(ini, 6)}">`)}
-    ${fld("Meta de horas líquidas da semana", `<input type="number" min="0" step="0.5" inputmode="decimal" name="metaHoras" id="w-m" value="${w.metaHoras ?? ""}">`, "full")}
+    ${fld("Meta de horas líquidas da semana", `<input type="number" min="0" step="0.5" inputmode="decimal" name="metaHoras" id="w-m" value="${w.metaHoras ?? ""}">`, "", "total, com o fim de semana")}
+    ${fld("Desse total, no fim de semana", `<input type="number" min="0" step="0.5" inputmode="decimal" name="metaFds" id="w-mf" value="${w.metaFds ?? ""}">`, "", "horas no sábado e domingo seguintes")}
   </form>`, `${!isNew ? `<button class="btn danger" id="wDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="wCancel">Cancelar</button><button class="btn primary" id="wSave">Salvar semana</button>`);
   $("#wCancel").onclick = closeDrawer;
   if (!isNew) $("#wDel").onclick = async () => {
@@ -2106,7 +2141,8 @@ function weekForm(w = {}) {
   };
   $("#wSave").onclick = async () => {
     const f = form($("#wForm")); if (!f.nome) { toast("Dê um nome à semana"); return; }
-    const rec = Object.assign({}, w, f, { kind: "week", id: w.id || uid("wk"), ordem: w.ordem ?? ((last ? last.ordem ?? ws.length : 0) + 1), metaHoras: f.metaHoras === "" ? null : +f.metaHoras });
+    const rec = Object.assign({}, w, f, { kind: "week", id: w.id || uid("wk"), ordem: w.ordem ?? ((last ? last.ordem ?? ws.length : 0) + 1), metaHoras: f.metaHoras === "" ? null : +f.metaHoras, metaFds: f.metaFds === "" ? null : +f.metaFds });
+    if (rec.metaFds != null && (rec.metaHoras == null || rec.metaFds > rec.metaHoras)) { toast("As horas do fim de semana fazem parte da meta da semana: não podem passar do total"); return; }
     await put(rec); selWeek = rec.id; closeDrawer(); toast("Semana salva"); if (isNew && route !== "semanas" && route !== "crono") go("semanas", { week: rec.id }); else render();
   };
 }
