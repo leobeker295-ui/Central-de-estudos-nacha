@@ -984,7 +984,7 @@ const HELP = {
   },
   horas: {
     serve: "Mede o tempo de estudo real, sem as pausas, e compara com a sua meta diária. As horas líquidas mostram se a rotina planejada está sendo cumprida.",
-    fazer: ["Clique em “Iniciar estudo”, escolha a matéria e o timer começa. Use Pausar/Retomar nas paradas e “Encerrar” no fim: o bloco é salvo sozinho, já sem as pausas.", "O timer aparece no topo de todas as abas e continua contando mesmo se fechar a página. Dá para iniciar no computador e encerrar pelo celular.", "Mudou de matéria? Use “Trocar matéria”: o bloco atual é salvo e o timer recomeça na nova.", "Se preferir lançar depois, use “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar” para mudar a meta diária e o tempo do almoço."],
+    fazer: ["Clique em “Iniciar estudo”, escolha a matéria e o timer começa. Use Pausar/Retomar nas paradas e “Encerrar” no fim: o bloco é salvo sozinho, já sem as pausas.", "O timer aparece no topo de todas as abas e continua contando mesmo se fechar a página. Dá para iniciar no computador e encerrar pelo celular.", "Mudou de matéria? Use “Trocar matéria”: o bloco atual é salvo e o timer recomeça na nova.", "Se preferir lançar depois, use “Novo bloco” e informe início, término e pausas.", "Marque “Descontar almoço” só se o almoço não foi lançado como pausa, para não descontar duas vezes.", "Troque a data no seletor para ver ou corrigir outros dias.", "Use “Ajustar metas” para mudar a meta diária e a da semana: a meta da semana acompanha a diária (diária × dias de estudo) ou recebe um valor seu, e vale em todas as abas."],
     dica: "Vincule o bloco a um conteúdo para as horas aparecerem nele e na semana certa.",
   },
   biblioteca: {
@@ -1080,7 +1080,7 @@ function vVisao() {
     <div class="kpi lead"><label>Conclusão do planejamento</label><b class="num">${Math.round(o.pct)}%</b><small>${o.done} de ${o.total} conteúdos concluídos</small>${bar(o.pct)}</div>
     ${k("Em andamento", o.and, "conteúdos abertos")}
     ${k("Pendentes", o.pend, "ainda não iniciados")}
-    ${k("Horas líquidas", hm(o.min), o.meta ? `meta ${hm(o.meta)} · ${Math.round(o.min / o.meta * 100)}%` : "defina metas nas semanas")}
+    ${k("Horas líquidas", hm(o.min), o.meta ? `meta ${hm(o.meta)} · ${Math.round(o.min / o.meta * 100)}%` : `<button class="linkbtn" data-act="hours-config">definir metas</button>`)}
     ${k("Questões resolvidas", o.qr.toLocaleString("pt-BR"), `${o.qc.toLocaleString("pt-BR")} corretas`)}
     ${k("Acertos", fmtPct(o.acc), "corretas ÷ resolvidas")}
     ${k("Erros registrados", errors().length, `${errors().filter(e => e.status !== "corrigido").length} sem correção`)}
@@ -1182,7 +1182,7 @@ function vSemanas() {
   const gTitle = k => wGroup === "dia" && /^\d{4}-/.test(k) ? `${WEEKDAYS[new Date(k + "T12:00:00").getDay()]} ${fmtD(k)}${k === TODAY() ? ` <span class="chip ok" style="text-transform:none;letter-spacing:0"><i></i>hoje</span>` : ""}${daySess(k) ? ` <span class="chip pink" style="text-transform:none;letter-spacing:0">${hm(daySess(k))} estudadas</span>` : ""}` : esc(k);
   const prev = ws[idx - 1], next = ws[idx + 1];
   const head = `<div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <div class="card-h" style="margin:0"><div><span class="eyebrow">Semana ${idx + 1} de ${ws.length}</span><h1>${esc(w.nome)}</h1><p>${w.inicio ? fmtDY(w.inicio) + " a " + fmtDY(w.fim) : "Período a definir"} · meta ${w.metaHoras ? w.metaHoras + "h" : "não definida"}</p></div>
+    <div class="card-h" style="margin:0"><div><span class="eyebrow">Semana ${idx + 1} de ${ws.length}</span><h1>${esc(w.nome)}</h1><p>${w.inicio ? fmtDY(w.inicio) + " a " + fmtDY(w.fim) : "Período a definir"} · meta ${w.metaHoras ? fmtH(+w.metaHoras) : "não definida"} <button class="linkbtn" data-act="hours-config" data-week="${w.id}">ajustar</button></p></div>
       <div class="row">${prev ? `<button class="btn sm ghost" data-act="sel-week" data-id="${prev.id}">‹ Anterior</button>` : ""}${next ? `<button class="btn sm ghost" data-act="sel-week" data-id="${next.id}">Próxima ›</button>` : ""}<button class="icon-btn" data-act="edit-week" data-id="${w.id}" aria-label="Editar semana">${ic("edit")}</button></div></div>
     <div class="row"><div style="flex:1;min-width:160px">${bar(st.pct)}</div><b class="num">${Math.round(st.pct)}%</b><span class="muted small">${st.done} concluídos · ${st.and} em andamento · ${st.pend} pendentes</span></div>
   </div>`;
@@ -1582,8 +1582,8 @@ function vHoras() {
     ${tm ? timerCard(tm) : ""}
     <div class="kpis horas"><div class="kpi lead"><label>Realizado em ${fmtDY(hDay)}</label><b class="num">${hm(tot)}</b><small>meta diária ${hm(meta)}${tm && hDay === TODAY() ? ` · +<span data-tmh>${hm(tLiq(tm) / 60000)}</span> no timer` : ""}</small>${bar(meta ? tot / meta * 100 : 0)}</div>
       <div class="kpi"><label>Saldo do dia</label><b class="num" style="color:${tot - meta >= 0 ? "var(--ok)" : "var(--bad)"}">${hm(tot - meta)}</b><small>${tot >= meta ? "meta batida" : "para a meta"}</small></div>
-      <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? " · meta " + w.metaHoras + "h" : "") : "data fora das semanas"}</small></div>
-      <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small><button class="btn sm ghost" data-act="hours-config" style="margin-top:4px">Ajustar</button></small></div></div>
+      <div class="kpi"><label>Total da semana</label><b class="num">${wTot == null ? "—" : hm(wTot)}</b><small>${w ? esc(w.nome) + (w.metaHoras ? ` · meta ${fmtH(+w.metaHoras)} · ${Math.round(wTot / (w.metaHoras * 60) * 100)}%` : "") : "data fora das semanas"}</small></div>
+      <div class="kpi"><label>Meta diária</label><b class="num">${hm(meta)}</b><small>${w ? `meta da semana ${w.metaHoras ? fmtH(+w.metaHoras) : "não definida"}` : ""}</small><small><button class="btn sm ghost" data-act="hours-config" ${w ? `data-week="${w.id}"` : ""} style="margin-top:4px">Ajustar metas</button></small></div></div>
     ${hView === "graficos" ? hoursPie(hWeek === "plano" ? null : get(hWeek) || w) : `<div class="grid g2"><div class="card"><div class="card-h"><h2>Blocos do dia</h2></div>
       ${day.length ? `<div class="tbl-wrap"><table><thead><tr><th>Horário</th><th>Assunto</th><th class="n">Pausas</th><th class="n">Líquido</th><th></th></tr></thead><tbody>${day.map(s => { const c = get(s.contentId); return `<tr><td class="num">${s.inicio && s.fim ? s.inicio + "–" + s.fim : "manual"}${s.almoco ? ' <span class="chip">almoço</span>' : ""}</td><td>${esc(c ? c.assunto : s.disciplina || "—")}</td><td class="n">${s.pausasMin || 0}m</td><td class="n"><b>${hm(sessionMin(s))}</b></td><td><button class="icon-btn" data-act="edit-session" data-id="${s.id}" aria-label="Editar">${ic("edit")}</button></td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted small">Nenhum bloco neste dia. Registre início e término do estudo.</p>`}</div>
     <div class="card"><div class="card-h"><h2>Últimos 7 dias</h2><p>traço = meta diária</p></div>${barChart(last7.map(fmtD), last7.map(d => sessions().filter(s => s.data === d).reduce((a, s) => a + sessionMin(s), 0) / 60), { fmt: v => (Math.round(v * 10) / 10) + "h", target: last7.map(() => meta / 60) })}</div></div>`}`;
@@ -1704,6 +1704,53 @@ setInterval(() => {
   document.querySelectorAll("[data-tmp]").forEach(e => e.textContent = Math.floor(tPausa(t) / 60000) + " min");
   document.title = (t.pausaDesde ? "⏸ " : "⏱ ") + v + " · " + (t.disciplina || "Estudo");
 }, 1000);
+
+/* ---------- Metas de horas ---------- */
+// meta da semana = meta diária × dias de estudo (seg a sex dentro do período da semana), como na planilha (8h × 5 = 40h)
+function diasEstudo(w) {
+  if (!w || !w.inicio || !w.fim) return 5;
+  let n = 0; for (let d = w.inicio; d <= w.fim; d = addDays(d, 1)) { const k = new Date(d + "T12:00:00").getDay(); if (k > 0 && k < 6) n++; }
+  return n || 5;
+}
+const fmtH = h => (Math.round(h * 100) / 100).toLocaleString("pt-BR") + "h";
+function goalsForm(wid) {
+  const s = settings(), ws = weeks(), w0 = get(wid) || currentWeek() || ws[0];
+  const i0 = Math.max(0, ws.indexOf(w0));
+  let manual = false; // a meta da semana só segue a diária enquanto não for digitada à mão
+  openDrawer("Metas de horas", `<form class="form" id="goalForm">
+    ${fld("Meta diária (horas)", `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-d" value="${(+s.metaDiaria || 0) / 60}">`)}
+    ${w0 ? fld(`Meta da ${esc(w0.nome)} (horas)`, `<input type="number" step="0.5" min="0" inputmode="decimal" id="mg-w" value="${w0.metaHoras ?? ""}">`, "", `<span id="mg-h"></span>`) : ""}
+    ${w0 ? fld("Aplicar a meta da semana em", `<select id="mg-a">${opts([["daqui", `${w0.nome} e as seguintes`], ["so", `Só na ${w0.nome}`], ["todas", "Todas as semanas"], ["nao", "Não mudar as semanas"]], "daqui")}</select>`, "full") : ""}
+    <div class="full banner" id="mg-p"></div>
+    ${fld("Desconto do almoço (min)", `<input type="number" min="0" name="almocoMin" id="st-a" value="${s.almocoMin}">`)}
+    <label class="fld full toggle"><input type="checkbox" name="almocoPadrao" id="st-ap" ${s.almocoPadrao ? "checked" : ""}><span>Novos blocos já vêm com o desconto do almoço marcado</span></label>
+  </form>`, `<button class="btn ghost" id="mgC">Cancelar</button><button class="btn primary" id="mgS">Salvar metas</button>`);
+  // semanas afetadas e a nova meta de cada uma
+  const plan = () => {
+    const d = +$("#mg-d").value || 0, a = w0 ? $("#mg-a").value : "nao", wv = w0 ? $("#mg-w").value : "";
+    const alvo = a === "nao" ? [] : a === "so" ? [w0] : a === "todas" ? ws : ws.slice(i0);
+    return alvo.map(w => ({ w, de: w.metaHoras, para: manual && wv !== "" ? +wv : d * diasEstudo(w) })).filter(x => (+x.de || 0) !== x.para);
+  };
+  const upd = () => {
+    const d = +$("#mg-d").value || 0;
+    if (w0 && !manual) $("#mg-w").value = d * diasEstudo(w0);
+    if (w0) $("#mg-h").textContent = manual ? "Valor digitado: vale igual para todas as semanas escolhidas." : `${fmtH(d)} × ${diasEstudo(w0)} dias de estudo (seg a sex)`;
+    const ch = plan();
+    $("#mg-p").innerHTML = `<span>${ch.length ? `<b>Vai atualizar ${ch.length} semana${ch.length === 1 ? "" : "s"}:</b> ${ch.map(x => `${esc(x.w.nome)} ${x.de ? fmtH(+x.de) : "sem meta"} → <b>${fmtH(x.para)}</b>`).join(" · ")}. A mudança aparece em todas as abas (Visão geral, Semanas, Horas e Fechamentos).` : "Nenhuma meta de semana muda."}</span>`;
+  };
+  $("#mg-d").addEventListener("input", upd);
+  if (w0) { $("#mg-w").addEventListener("input", () => { manual = true; upd(); }); $("#mg-a").onchange = upd; }
+  upd();
+  $("#mgC").onclick = closeDrawer;
+  $("#mgS").onclick = async () => {
+    const dv = $("#mg-d").value; if (dv === "" || +dv < 0) { toast("Informe a meta diária"); return; }
+    if (w0 && manual && ($("#mg-w").value === "" || +$("#mg-w").value < 0)) { toast("Informe a meta da semana"); return; }
+    const f = form($("#goalForm")), ch = plan();
+    await put(Object.assign({}, get("settings") || {}, { id: "settings", kind: "settings", metaDiaria: Math.round(+dv * 60), almocoMin: +f.almocoMin || 0, almocoPadrao: f.almocoPadrao }));
+    for (const x of ch) await put(Object.assign({}, get(x.w.id), { metaHoras: x.para }));
+    closeDrawer(); toast("Metas salvas" + (ch.length ? ` · ${ch.length} semana${ch.length === 1 ? "" : "s"} atualizada${ch.length === 1 ? "" : "s"}` : "")); render();
+  };
+}
 
 /* ---------- Biblioteca ---------- */
 let lf = { disc: "", week: "", q: "" };
@@ -2406,16 +2453,14 @@ document.addEventListener("click", async e => {
       catch (er) { if (!er || er.code !== "declined") toast("Não consegui baixar. Use “Abrir material”."); }
       break;
     }
-    case "rev-config": case "hours-config": {
+    case "hours-config": goalsForm(a.dataset.week || (route === "horas" ? (weekOfDate(hDay) || currentWeek() || {}).id : (currentWeek() || {}).id)); break;
+    case "rev-config": {
       const s = settings();
-      openDrawer("Preferências", `<form class="form" id="setForm">
+      openDrawer("Intervalos de revisão", `<form class="form" id="setForm">
         ${fld("Intervalos de revisão (dias)", `<input name="intervalos" id="st-i" value="${esc(s.intervalos)}">`, "full", "Separe por vírgula. Ex.: 1, 7, 15, 30")}
-        ${fld("Meta diária (horas)", `<input type="number" step="0.5" min="0" name="metaH" id="st-m" value="${(s.metaDiaria || 0) / 60}">`)}
-        ${fld("Desconto do almoço (min)", `<input type="number" min="0" name="almocoMin" id="st-a" value="${s.almocoMin}">`)}
-        <label class="fld full toggle"><input type="checkbox" name="almocoPadrao" id="st-ap" ${s.almocoPadrao ? "checked" : ""}><span>Novos blocos já vêm com o desconto do almoço marcado</span></label>
       </form>`, `<button class="btn ghost" id="stC">Cancelar</button><button class="btn primary" id="stS">Salvar</button>`);
       $("#stC").onclick = closeDrawer;
-      $("#stS").onclick = async () => { const f = form($("#setForm")); await put(Object.assign({}, get("settings") || {}, { id: "settings", kind: "settings", intervalos: f.intervalos || "1, 7, 15, 30", metaDiaria: Math.round((+f.metaH || 0) * 60), almocoMin: +f.almocoMin || 0, almocoPadrao: f.almocoPadrao })); closeDrawer(); toast("Preferências salvas"); render(); };
+      $("#stS").onclick = async () => { const f = form($("#setForm")); await put(Object.assign({}, get("settings") || {}, { id: "settings", kind: "settings", intervalos: f.intervalos || "1, 7, 15, 30" })); closeDrawer(); toast("Intervalos salvos"); render(); };
       break;
     }
   }
