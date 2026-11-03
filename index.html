@@ -376,27 +376,37 @@ tr:last-child td{border-bottom:0}
 .mapinfo b{display:block;font-size:.92rem;line-height:1.35}
 .mapinfo small{display:block;color:var(--ink-3);font-size:.78rem;margin-top:2px}
 .mapinfo .icon-btn{margin-left:auto;flex:none}
-.mod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
-.mod-card{all:unset;cursor:pointer;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border-top:5px solid var(--mc);transition:transform .15s,box-shadow .15s}
-.mod-card:hover{transform:translateY(-2px)}
-.mod-card:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
-.mod-thumbs{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;aspect-ratio:16/10;background:var(--line)}
-.mod-thumbs img{width:100%;height:100%;object-fit:cover;object-position:top;background:#fff;display:block;min-height:0}
-.mod-thumbs.n1 img{grid-column:1/-1;grid-row:1/-1}
-.mod-thumbs.n2 img{grid-row:1/-1}
-.mod-thumbs.n3 img:first-child{grid-row:1/-1}
-.mod-info{padding:12px 14px 14px;display:flex;flex-direction:column;gap:2px}
-.mod-info b{font-size:1rem}
-.mod-info small{color:var(--ink-3);font-size:.8rem}
-.mod-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.mod-tags span{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--field);color:var(--ink-2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.map-disc-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-left:5px solid var(--mc)}
-.map-disc-h h2{margin:2px 0}
-.map-mod{display:flex;flex-direction:column;gap:12px}
-.map-mod-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.map-mod-h h3{margin:0;font-size:1.05rem}
-.map-mod-h .dot{width:10px;height:10px;border-radius:50%;flex:none}
-.map-mod-h .btn{margin-left:auto}
+.mm-layout{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start}
+.mm-menu{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:84px;max-height:calc(100vh - 110px);overflow-y:auto}
+.mm-mod-h{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-weight:600;color:var(--ink-2)}
+.mm-mod-h:hover{background:var(--field);color:var(--ink)}
+.mm-mod-h:focus-visible{outline:2px solid var(--pink);outline-offset:-2px}
+.mm-mod.open > .mm-mod-h{background:var(--lav);color:var(--ink)}
+.mm-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--mc) 16%,transparent);color:var(--mc)}
+.mm-ico svg{width:17px;height:17px}
+.mm-name{flex:1;min-width:0}
+.mm-n{font-size:.75rem;font-weight:700;min-width:22px;height:22px;padding:0 7px;border-radius:99px;display:grid;place-items:center;background:var(--field);color:var(--ink-2)}
+.mm-chev{width:7px;height:7px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(-45deg);margin:0 4px;transition:transform .15s}
+.mm-mod.open .mm-chev{transform:rotate(45deg)}
+.mm-list{list-style:none;margin:4px 0 8px 26px;padding:0 0 0 12px;border-left:2px solid color-mix(in srgb,var(--mc) 45%,transparent);display:flex;flex-direction:column;gap:2px}
+.mm-item{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:10px}
+.mm-item:hover{background:var(--field)}
+.mm-item:focus-visible{outline:2px solid var(--pink);outline-offset:-2px}
+.mm-item.on{background:var(--pink-soft)}
+.mm-item.on b{color:var(--pink-ink)}
+.mm-item img{width:46px;height:32px;object-fit:cover;object-position:top;border-radius:6px;background:#fff;border:1px solid var(--line);flex:none}
+.mm-item span{min-width:0;display:flex;flex-direction:column}
+.mm-item b{font-size:.88rem;font-weight:600;line-height:1.3}
+.mm-item small{font-size:.74rem;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-view{display:flex;flex-direction:column;gap:14px;border-top:4px solid var(--mc,var(--line))}
+.mm-view-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mm-view-h h2{margin:2px 0}
+.mm-view-h .icon-btn{font-size:1.3rem;font-weight:600}
+.mm-view-h .icon-btn:disabled{opacity:.3;cursor:default}
+.mm-big{all:unset;cursor:zoom-in;display:block;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mm-big img{display:block;width:100%;max-height:62vh;object-fit:contain}
+.mm-big:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+@media (max-width:860px){.mm-layout{grid-template-columns:minmax(0,1fr)}.mm-menu{position:static;max-height:none}.mm-item img{width:56px;height:38px}}
 .mp-prev .mp-strip{display:flex;gap:8px;overflow-x:auto;margin-top:8px}
 .mp-prev canvas{height:120px;width:auto;border-radius:8px;border:1px solid var(--line);flex:none}
 .mp-big{width:100%;border-radius:10px;border:1px solid var(--line);background:#fff}
@@ -1065,7 +1075,7 @@ const HELP = {
   },
   mapas: {
     serve: "Guarda os seus mapas mentais como imagem, prontos para revisar: clique na miniatura e o mapa abre em tela cheia, com zoom para ler cada ramo.",
-    fazer: ["Cada disciplina é uma pasta: clique nela para ver os mapas separados por módulo. Para colocar um mapa num módulo, edite o mapa e preencha “Módulo”.", "Clique em “Novo mapa” e escolha um PDF ou uma imagem (PNG, JPG ou WebP). O PDF é convertido em PNG aqui mesmo, e cada página vira um mapa.", "Ligue o mapa a um conteúdo do cronograma: ele passa a aparecer com o botão “Mapa” nas revisões desse assunto.", "No mapa aberto, use a roda do mouse, a pinça no celular ou os botões + e − para ampliar, e arraste para andar. As setas passam para o próximo mapa.", "Filtre por disciplina ou busque pelo título para achar um mapa rápido."],
+    fazer: ["Cada disciplina é um módulo no menu: clique nela para abrir a lista dos mapas, em ordem alfabética. No computador o mapa escolhido aparece ao lado; no celular ele abre direto em tela cheia.", "Clique em “Novo mapa” e escolha um PDF ou uma imagem (PNG, JPG ou WebP). O PDF é convertido em PNG aqui mesmo, e cada página vira um mapa.", "Ligue o mapa a um conteúdo do cronograma: ele passa a aparecer com o botão “Mapa” nas revisões desse assunto.", "No mapa aberto, use a roda do mouse, a pinça no celular ou os botões + e − para ampliar, e arraste para andar. As setas passam para o próximo mapa.", "Filtre por disciplina ou busque pelo título para achar um mapa rápido."],
     dica: "Só a imagem fica guardada, não o PDF. Os mapas ficam no espaço privado do login de vocês, na nuvem.",
   },
   lembretes: {
@@ -1916,7 +1926,8 @@ const mindmaps = () => all("mindmap").sort((a, b) => (b.criadoEm || "").localeCo
 const mapsOfReview = r => mindmaps().filter(m => { const c = get(m.contentId); return c && c.assunto === r.assunto; });
 const mapBtn = r => { const ms = mapsOfReview(r); return ms.length ? `<button class="btn sm ghost" data-act="open-map" data-id="${ms[0].id}" data-nav="${ms.map(m => m.id).join(",")}">${ic("map")}Mapa</button>` : ""; };
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-let pdfjsP = null, mf = { disc: "", q: "" }; // mf.disc = disciplina aberta ("" = todas as disciplinas)
+let pdfjsP = null, mf = { disc: null, q: "", sel: "" }; // mf.disc = módulo (disciplina) aberto no menu; mf.sel = mapa mostrado ao lado
+const celular = () => matchMedia("(max-width:860px)").matches;
 const loadPdfjs = () => pdfjsP || (pdfjsP = new Promise((ok, fail) => {
   const el = document.createElement("script"); el.src = PDFJS + "pdf.min.js";
   el.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(window.pdfjsLib); };
@@ -1955,47 +1966,35 @@ async function fillThumbs() {
   try { const us = await signedUrls(imgs.map(i => i.dataset.path)); imgs.forEach((i, n) => { if (us[n]) i.src = us[n]; }); } catch (e) { }
 }
 function vMapas() {
-  const head = `<div class="page-h"><div><span class="eyebrow">Mapas mentais</span><h1>Revise com mapas</h1><p>Suba o mapa em PDF ou imagem: o PDF vira PNG aqui mesmo. Clique na miniatura para abrir em tela cheia, com zoom.</p></div>${sb && S.user ? `<button class="btn primary" data-act="new-map">${ic("plus")}Novo mapa</button>` : ""}</div>`;
+  const head = `<div class="page-h"><div><span class="eyebrow">Mapas mentais</span><h1>Revise com mapas</h1><p>Cada disciplina é um módulo: clique nela para ver os mapas em ordem alfabética. Suba mapas em PDF ou imagem (o PDF vira PNG aqui mesmo).</p></div>${sb && S.user ? `<button class="btn primary" data-act="new-map">${ic("plus")}Novo mapa</button>` : ""}</div>`;
   if (!sb || !S.user) return head + `<div class="card">${empty("map", "Mapas mentais precisam da nuvem", "Entre com o login do dash para guardar e ver os mapas. No modo local não dá para guardar imagens.")}</div>`;
   const ms = mindmaps();
   if (!ms.length) return head + `<div class="card">${empty("map", "Nenhum mapa ainda", "Suba um mapa mental em PDF ou imagem. Ligue-o a um conteúdo do cronograma para ele aparecer nas revisões desse assunto.", `<button class="btn primary" data-act="new-map">Subir o primeiro mapa</button>`)}</div>`;
-  // disciplinas viram pastas (cartões com miniaturas); dentro de cada uma, os mapas ficam separados por módulo
+  // menu de módulos (um por disciplina, como o menu lateral do dash); clicando, abre a lista dos mapas em ordem alfabética
   const SEM = "Sem disciplina", dOf = m => m.disciplina || SEM;
   const order = [...new Set([...contents().map(c => c.disciplina), ...ms.map(dOf)].filter(Boolean))];
   const cor = d => { const i = order.indexOf(d); return d !== SEM && i >= 0 && i < 8 ? `var(--s${i + 1})` : "var(--ink-3)"; };
   const discs = [...new Set(ms.map(dOf))].sort((a, b) => (a === SEM) - (b === SEM) || order.indexOf(a) - order.indexOf(b));
-  if (mf.disc && !discs.includes(mf.disc)) mf.disc = "";
-  const busca = m => !mf.q || norm((m.titulo || "") + " " + (m.modulo || "") + " " + ((get(m.contentId) || {}).assunto || "")).includes(norm(mf.q));
-  const card = (m, nav) => { const c = get(m.contentId); return `<article class="mapcard">
-      <button class="mapthumb" data-act="open-map" data-id="${m.id}" data-nav="${nav}" aria-label="Abrir mapa: ${esc(m.titulo)}"><img data-path="${esc(m.mini || m.path)}" alt="" loading="lazy"></button>
-      <div class="mapinfo"><div style="min-width:0"><b>${esc(m.titulo || "Mapa mental")}</b><small>${esc([mf.disc ? "" : m.disciplina, c && c.assunto].filter(Boolean).join(" · ") || "Sem conteúdo ligado")}</small></div>
-      <button class="icon-btn" data-act="edit-map" data-id="${m.id}" aria-label="Editar mapa">${ic("edit")}</button></div></article>`; };
-  // módulos de uma disciplina, em ordem natural (Módulo 2 antes de Módulo 10); mapas sem módulo vão por último
-  const porModulo = list => { const mods = [...new Set(list.map(m => m.modulo || ""))].sort((a, b) => (a === "") - (b === "") || a.localeCompare(b, "pt-BR", { numeric: true })); return mods.map(k => [k, list.filter(m => (m.modulo || "") === k)]); };
-  const secoes = list => {
-    const grupos = porModulo(list), nav = grupos.flatMap(g => g[1]).map(m => m.id).join(",");
-    if (grupos.length === 1 && !grupos[0][0]) return `<div class="maps">${list.map(m => card(m, nav)).join("")}</div>`;
-    return grupos.map(([k, its]) => `<section class="map-mod"><div class="map-mod-h"><h3>${esc(k || "Sem módulo")}</h3><span class="chip">${its.length} mapa${its.length === 1 ? "" : "s"}</span></div><div class="maps">${its.map(m => card(m, nav)).join("")}</div></section>`).join("");
-  };
-  const busc = `<div class="filters"><input id="mfQ" placeholder="${mf.disc ? "Buscar nesta disciplina" : "Buscar mapa ou módulo"}" value="${esc(mf.q)}"></div>`;
-  if (mf.disc) {
-    const all = ms.filter(m => dOf(m) === mf.disc), list = all.filter(busca), nMods = new Set(all.map(m => m.modulo).filter(Boolean)).size;
-    return head + `<div class="wk-back"><button class="btn sm ghost" data-act="map-disc" data-v="">‹ Todas as disciplinas</button></div>
-      <div class="card map-disc-h" style="--mc:${cor(mf.disc)}"><div><span class="eyebrow">Disciplina</span><h2>${esc(mf.disc)}</h2><p class="muted small">${all.length} mapa${all.length === 1 ? "" : "s"}${nMods ? ` · ${nMods} módulo${nMods === 1 ? "" : "s"}` : " · edite um mapa e preencha “Módulo” para separar em módulos"}</p></div>
-      <button class="btn primary" data-act="new-map" data-disc="${esc(mf.disc === SEM ? "" : mf.disc)}">${ic("plus")}Novo mapa nesta disciplina</button></div>`
-      + busc + (list.length ? secoes(list) : `<div class="card"><p class="muted">Nenhum mapa com essa busca nesta disciplina.</p></div>`);
-  }
-  if (mf.q) {
-    const list = ms.filter(busca);
-    return head + busc + (list.length ? discs.filter(d => list.some(m => dOf(m) === d)).map(d => `<section class="map-mod"><div class="map-mod-h"><span class="dot" style="background:${cor(d)}"></span><h3>${esc(d)}</h3><button class="btn sm ghost" data-act="map-disc" data-v="${esc(d)}">Abrir disciplina</button></div>${secoes(list.filter(m => dOf(m) === d))}</section>`).join("") : `<div class="card"><p class="muted">Nenhum mapa com essa busca.</p></div>`);
-  }
-  return head + busc + `<div class="mod-grid">${discs.map(d => {
-    const its = ms.filter(m => dOf(m) === d), mods = porModulo(its).filter(g => g[0]), th = its.slice(0, 4);
-    return `<button class="mod-card" data-act="map-disc" data-v="${esc(d)}" style="--mc:${cor(d)}" aria-label="Abrir ${esc(d)}: ${its.length} mapas">
-      <div class="mod-thumbs n${th.length}">${th.map(m => `<img data-path="${esc(m.mini || m.path)}" alt="" loading="lazy">`).join("")}</div>
-      <div class="mod-info"><b>${esc(d)}</b><small>${its.length} mapa${its.length === 1 ? "" : "s"}${mods.length ? ` · ${mods.length} módulo${mods.length === 1 ? "" : "s"}` : ""}</small>
-      ${mods.length ? `<div class="mod-tags">${mods.slice(0, 3).map(g => `<span>${esc(g[0])}</span>`).join("")}${mods.length > 3 ? `<span>+${mods.length - 3}</span>` : ""}</div>` : ""}</div></button>`;
-  }).join("")}</div>`;
+  const abc = (a, b) => (a.titulo || "").localeCompare(b.titulo || "", "pt-BR", { numeric: true, sensitivity: "base" });
+  const busca = m => !mf.q || norm((m.titulo || "") + " " + ((get(m.contentId) || {}).assunto || "")).includes(norm(mf.q));
+  const mapsOf = d => ms.filter(m => dOf(m) === d && busca(m)).sort(abc);
+  const vis = discs.filter(d => mapsOf(d).length);
+  if (mf.disc === null || (mf.disc && !discs.includes(mf.disc))) mf.disc = celular() ? "" : discs[0]; // no computador já abre o primeiro módulo
+  const aberto = d => mf.q ? true : mf.disc === d; // na busca, todos os módulos com resultado ficam abertos
+  const lista = mf.disc ? mapsOf(mf.disc) : [];
+  if (!celular() && (!mf.sel || !get(mf.sel) || (!mf.q && dOf(get(mf.sel)) !== mf.disc))) mf.sel = (lista[0] || (mf.q && vis.length ? mapsOf(vis[0])[0] : null) || {}).id || "";
+  const sel = get(mf.sel);
+  const menu = `<nav class="card mm-menu" aria-label="Módulos de mapas mentais">${vis.length ? vis.map(d => { const its = mapsOf(d), op = aberto(d);
+    return `<div class="mm-mod${op ? " open" : ""}" style="--mc:${cor(d)}"><button class="mm-mod-h" data-act="map-disc" data-v="${esc(d)}" aria-expanded="${op}"><span class="mm-ico">${ic("map")}</span><span class="mm-name">${esc(d)}</span><span class="mm-n">${its.length}</span><span class="mm-chev" aria-hidden="true"></span></button>
+      ${op ? `<ul class="mm-list">${its.map(m => `<li><button class="mm-item${sel && sel.id === m.id ? " on" : ""}" data-act="map-sel" data-id="${m.id}" data-nav="${its.map(x => x.id).join(",")}" ${sel && sel.id === m.id ? 'aria-current="true"' : ""}><img data-path="${esc(m.mini || m.path)}" alt="" loading="lazy"><span><b>${esc(m.titulo || "Mapa mental")}</b>${get(m.contentId) ? `<small>${esc(get(m.contentId).assunto)}</small>` : ""}</span></button></li>`).join("")}</ul>` : ""}</div>`; }).join("")
+    : `<p class="muted small" style="padding:8px 4px">Nenhum mapa com essa busca.</p>`}</nav>`;
+  const prev = sel ? (() => { const c = get(sel.contentId), its = mapsOf(dOf(sel)), i = its.findIndex(m => m.id === sel.id);
+    return `<section class="card mm-view" style="--mc:${cor(dOf(sel))}"><div class="mm-view-h"><div style="min-width:0"><span class="eyebrow">${esc(dOf(sel))} · ${i + 1} de ${its.length}</span><h2>${esc(sel.titulo || "Mapa mental")}</h2>${c ? `<p class="muted small">${esc(c.assunto)}</p>` : ""}</div>
+      <div class="row"><button class="icon-btn" data-act="map-sel" data-id="${(its[i - 1] || {}).id || ""}" ${i > 0 ? "" : "disabled"} aria-label="Mapa anterior">‹</button><button class="icon-btn" data-act="map-sel" data-id="${(its[i + 1] || {}).id || ""}" ${i < its.length - 1 ? "" : "disabled"} aria-label="Próximo mapa">›</button><button class="icon-btn" data-act="edit-map" data-id="${sel.id}" aria-label="Editar mapa">${ic("edit")}</button></div></div>
+      <button class="mm-big" data-act="open-map" data-id="${sel.id}" data-nav="${its.map(m => m.id).join(",")}" aria-label="Abrir em tela cheia"><img data-path="${esc(sel.mini || sel.path)}" alt=""></button>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="open-map" data-id="${sel.id}" data-nav="${its.map(m => m.id).join(",")}">${ic("ext")}Abrir em tela cheia</button></div></section>`; })()
+    : `<section class="card mm-view">${empty("map", "Escolha um mapa", "Clique num módulo e depois num mapa para ver aqui.")}</section>`;
+  return head + `<div class="filters"><input id="mfQ" placeholder="Buscar mapa ou assunto" value="${esc(mf.q)}"></div><div class="mm-layout">${menu}${celular() ? "" : prev}</div>`;
 }
 function mapForm(m = {}) {
   const isNew = !m.id; let pages = null;
@@ -2006,13 +2005,10 @@ function mapForm(m = {}) {
     ${fld("Título", `<input id="mp-t" value="${esc(m.titulo)}" placeholder="Ex.: Direitos fundamentais (arts. 5º a 17)">`)}
     ${fld("Conteúdo do cronograma", `<select class="pick-src" id="mp-c">${opts(cOpts, m.contentId || "", "Não ligar a um conteúdo")}</select>`, "", "Ligado a um conteúdo, o mapa aparece nas revisões desse assunto.")}
     ${fld("Disciplina", `<input id="mp-d" list="dlDisc5" value="${esc(m.disciplina)}">`)}
-    ${fld("Módulo (opcional)", `<input id="mp-mo" list="dlMod" value="${esc(m.modulo)}" placeholder="Ex.: Módulo 1 · Princípios">`, "", "Dentro da disciplina, os mapas ficam separados por módulo.")}
-    <datalist id="dlDisc5">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist><datalist id="dlMod"></datalist>
+    <datalist id="dlDisc5">${disciplinas().map(d => `<option value="${esc(d)}">`).join("")}</datalist>
   </form>`, `${!isNew ? `<button class="btn danger" id="mpDel">${ic("trash")}Excluir</button><span style="flex:1"></span>` : ""}<button class="btn ghost" id="mpCancel">Cancelar</button><button class="btn primary" id="mpSave" ${isNew ? "disabled" : ""}>${isNew ? "Enviar mapa" : "Salvar"}</button>`);
   fillThumbs();
-  const modList = () => { const d = $("#mp-d").value.trim(); $("#dlMod").innerHTML = [...new Set(mindmaps().filter(x => (x.disciplina || "") === d).map(x => x.modulo).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true })).map(v => `<option value="${esc(v)}">`).join(""); };
-  $("#mp-d").addEventListener("input", modList); modList();
-  $("#mp-c").onchange = ev => { const x = get(ev.target.value); if (x && x.disciplina) { $("#mp-d").value = x.disciplina; modList(); } };
+  $("#mp-c").onchange = ev => { const x = get(ev.target.value); if (x && x.disciplina) $("#mp-d").value = x.disciplina; };
   $("#mpCancel").onclick = closeDrawer;
   if (isNew) $("#mp-f").onchange = async ev => {
     const f = ev.target.files[0]; pages = null; $("#mpSave").disabled = true; if (!f) return;
@@ -2031,8 +2027,8 @@ function mapForm(m = {}) {
     await del(m.id); closeDrawer(); toast("Mapa excluído"); render();
   };
   $("#mpSave").onclick = async () => {
-    const titulo = $("#mp-t").value.trim() || "Mapa mental", contentId = $("#mp-c").value || null, disciplina = $("#mp-d").value.trim(), modulo = $("#mp-mo").value.trim();
-    if (!isNew) { await put(Object.assign({}, m, { titulo, contentId, disciplina, modulo })); closeDrawer(); toast("Mapa salvo"); render(); return; }
+    const titulo = $("#mp-t").value.trim() || "Mapa mental", contentId = $("#mp-c").value || null, disciplina = $("#mp-d").value.trim();
+    if (!isNew) { await put(Object.assign({}, m, { titulo, contentId, disciplina })); closeDrawer(); toast("Mapa salvo"); render(); return; }
     if (!pages) return;
     const b = $("#mpSave"); b.disabled = true; const sent = [];
     try {
@@ -2043,7 +2039,7 @@ function mapForm(m = {}) {
         const path = `${S.user.id}/${id}.${ext}`, miniPath = `${S.user.id}/${id}-mini.${miniExt}`;
         let r = await sb.storage.from("mapas").upload(path, pg.blob, { contentType: pg.blob.type }); if (r.error) throw r.error; sent.push(path);
         r = await sb.storage.from("mapas").upload(miniPath, mini, { contentType: mini.type }); if (r.error) throw r.error; sent.push(miniPath);
-        await put({ id, kind: "mindmap", titulo: pages.length > 1 ? `${titulo} (pág. ${i + 1})` : titulo, contentId, disciplina, modulo, path, mini: miniPath, w: pg.w, h: pg.h, tamanho: pg.blob.size, criadoEm: new Date().toISOString() });
+        await put({ id, kind: "mindmap", titulo: pages.length > 1 ? `${titulo} (pág. ${i + 1})` : titulo, contentId, disciplina, path, mini: miniPath, w: pg.w, h: pg.h, tamanho: pg.blob.size, criadoEm: new Date().toISOString() });
       }
       closeDrawer(); toast(pages.length > 1 ? pages.length + " mapas enviados" : "Mapa enviado"); render();
     } catch (e) {
@@ -2530,8 +2526,9 @@ document.addEventListener("click", async e => {
     case "sel-week": selWeek = id; render(); break;
     case "view": VIEW[a.dataset.k] = a.dataset.v; try { localStorage.setItem("central-estudos-visao-" + a.dataset.k, a.dataset.v); } catch (er) { } render(); break;
     case "kmove": kMove(a.dataset.kkind, id, a.dataset.to); break;
-    case "new-map": mapForm(a.dataset.disc ? { disciplina: a.dataset.disc } : {}); break;
-    case "map-disc": mf.disc = a.dataset.v; scrollTo({ top: 0 }); render(); break;
+    case "new-map": mapForm(mf.disc && mf.disc !== "Sem disciplina" ? { disciplina: mf.disc } : {}); break;
+    case "map-disc": if (mf.q) { mf.q = ""; mf.disc = a.dataset.v; } else mf.disc = mf.disc === a.dataset.v ? "" : a.dataset.v; mf.sel = ""; render(); break;
+    case "map-sel": if (!id) break; if (celular()) openViewer(id, a.dataset.nav ? a.dataset.nav.split(",") : [id]); else { mf.sel = id; render(); } break;
     case "edit-map": mapForm(get(id)); break;
     case "open-map": openViewer(id, a.dataset.nav ? a.dataset.nav.split(",") : [id]); break;
     case "new-reminder": reminderForm(); break;
