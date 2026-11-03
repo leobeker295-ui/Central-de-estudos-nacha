@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Estudos"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#E6E6FA" id="themeColor"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Central de Estudos</title>
 <script>try { const t = localStorage.getItem("central-estudos-tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) { }</script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -74,6 +74,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tm-chip{display:flex;align-items:center;gap:2px;background:var(--white);border-radius:99px;padding:3px;box-shadow:var(--shadow);min-width:0}
 .tm-chip[hidden]{display:none}
 .wk-past{padding:14px 20px}
+.app-tip img{border-radius:10px;flex:none}
+.app-tip svg{width:16px;height:16px;vertical-align:-3px;color:var(--pink-ink)}
 .plan-info{padding:14px 20px}
 .plan-info summary{cursor:pointer;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;list-style:none}
 .plan-info summary::-webkit-details-marker{display:none}
@@ -582,6 +584,7 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+  share: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   play: '<path d="M7 4.5v15l12-7.5z"/>',
   pause: '<path d="M9 5v14M15 5v14"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
@@ -964,7 +967,7 @@ $("#goCrono").onclick = () => go("crono");
 
 /* tema: segue o aparelho até a pessoa escolher; a escolha fica neste navegador */
 const darkNow = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-function paintThemeBtn() { const d = darkNow(), b = $("#themeBtn"); b.innerHTML = ic(d ? "sun" : "moon"); b.title = b.ariaLabel = d ? "Usar tema claro" : "Usar tema escuro"; }
+function paintThemeBtn() { const d = darkNow(), b = $("#themeBtn"); b.innerHTML = ic(d ? "sun" : "moon"); b.title = b.ariaLabel = d ? "Usar tema claro" : "Usar tema escuro"; $("#themeColor").content = d ? "#1C1726" : "#E6E6FA"; }
 $("#themeBtn").onclick = () => { const t = darkNow() ? "light" : "dark"; document.documentElement.dataset.theme = t; try { localStorage.setItem("central-estudos-tema", t); } catch (e) { } paintThemeBtn(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintThemeBtn);
 paintThemeBtn();
@@ -975,7 +978,7 @@ const HELP = {
   visao: {
     serve: "É o painel de controle do seu estudo. Mostra num só lugar quanto do plano já foi cumprido, como estão suas horas e seus acertos e o que precisa de atenção hoje.",
     fazer: ["Comece o dia por aqui: confira os “Próximos passos” da semana atual e as “Revisões de hoje”.", "Marque o check de um conteúdo assim que terminar de estudá-lo.", "Use “Registrar horas” ao fim de cada bloco de estudo e “Registrar erro” sempre que errar uma questão.", "Acompanhe os gráficos para ver se horas e acertos evoluem semana a semana."],
-    dica: "Conclusão do plano (o que você já estudou) e acertos (o que você já domina) são métricas diferentes. Olhe as duas.",
+    dica: "Conclusão do plano (o que você já estudou) e acertos (o que você já domina) são métricas diferentes. Olhe as duas. No celular, dá para instalar o dash como app: no iPhone, Safari › Compartilhar › “Adicionar à Tela de Início”; no Android, menu do Chrome › “Instalar app”.",
   },
   crono: {
     serve: "Mostra o planejamento completo, com todas as semanas e assuntos na ordem da sua planilha. É o mapa inteiro do estudo até a prova.",
@@ -1073,11 +1076,16 @@ function render() {
   const pend = localPending().length;
   const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, simulados: vSimulados, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, mapas: vMapas, fechamentos: vFechamentos, lembretes: vLembretes }[route];
   const pl = settings().plano; $(".side .brand small").textContent = pl ? "Prefeitura de Curitiba" : "Concurso público";
-  $("#view").innerHTML = (S.mode === "local" ? localBanner() : "") + (pend ? sendBanner(pend) : "") + (!settings().planoImportado && !pend ? planBanner() : "") + (hasExample() ? exampleBanner() : "") + v();
+  $("#view").innerHTML = (S.mode === "local" ? localBanner() : "") + (pend ? sendBanner(pend) : "") + (!settings().planoImportado && !pend ? planBanner() : "") + (hasExample() ? exampleBanner() : "") + (route === "visao" ? appBanner() : "") + v();
   const eb = $("#view .page-h .eyebrow");
   if (eb && HELP[route]) eb.outerHTML = `<div class="eyebrow-row">${eb.outerHTML}${helpHTML(route)}</div>`;
   bindView(); fillThumbs();
 }
+// iPhone/iPad não têm botão de instalar: o aviso ensina o caminho no Safari até a pessoa instalar ou fechar
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isApp = () => navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+const appTipOff = () => { try { return !!localStorage.getItem("central-estudos-dica-app"); } catch (e) { return true; } };
+const appBanner = () => isIOS && !isApp() && !appTipOff() ? `<div class="banner app-tip"><img src="/icons/apple-touch-icon.png" alt="" width="40" height="40"><span><b>Use o dash como app no iPhone.</b> No Safari, toque em <b>Compartilhar</b> ${ic("share")} e depois em <b>“Adicionar à Tela de Início”</b>. Se abriu o link por outro app (WhatsApp, Instagram…), abra no Safari antes.</span><button class="btn sm ghost" data-act="app-tip-off">Entendi</button></div>` : "";
 const planCount = () => PLANO.semanas.reduce((a, s) => a + s.dias.reduce((b, d) => b + d.itens.length, 0), 0);
 const planBanner = () => `<div class="banner" style="background:var(--white);box-shadow:var(--shadow)">${ic("upload")}<span><b>Sua planilha está pronta para entrar.</b> ${PLANO.semanas.length} semanas e ${planCount()} assuntos de “${esc(PLANO.titulo)}”.</span><div class="row"><button class="btn sm primary" data-act="import-plan">Conferir e importar</button></div></div>`;
 const hasExample = () => [...S.docs.values()].some(d => d.exemplo);
@@ -2453,6 +2461,7 @@ document.addEventListener("click", async e => {
     case "done-review": reviewDone(get(id)); break;
     case "edit-review": reviewForm(get(id)); break;
     case "crono-sem": setCfSem(a.dataset.v); scrollTo({ top: 0 }); break;
+    case "app-tip-off": try { localStorage.setItem("central-estudos-dica-app", "1"); } catch (er) { } render(); break;
     case "new-session": sessionForm({}, { contentId: a.dataset.content }); break;
     case "edit-session": sessionForm(get(id)); break;
     case "timer-new": timerForm(!!timer(), { contentId: a.dataset.content }); break;

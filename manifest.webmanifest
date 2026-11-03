@@ -1,0 +1,18 @@
+{
+  "name": "Central de Estudos",
+  "short_name": "Estudos",
+  "description": "Cronograma, erros, revisões e horas de estudo para o concurso da Prefeitura de Curitiba.",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#E6E6FA",
+  "theme_color": "#E6E6FA",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
