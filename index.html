@@ -329,6 +329,8 @@ tr:last-child td{border-bottom:0}
 .list{display:flex;flex-direction:column;gap:10px}
 .li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--white)}
 .li .body{flex:1;min-width:0}
+.li-acts{display:flex;align-items:center;gap:8px;flex:none}
+@media (max-width:860px){.rev-li{flex-wrap:wrap;position:relative;padding-left:24px}.rev-li .stripe{position:absolute;left:12px;top:12px;bottom:12px;height:auto}.rev-li .li-acts{flex-basis:100%;justify-content:flex-end}}
 .li .body b{display:block}
 .li .body p{font-size:.84rem;color:var(--ink-2);margin-top:2px}
 .li .body p.err-exp{color:var(--ink);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -1054,7 +1056,7 @@ const HELP = {
   },
   revisoes: {
     serve: "Garante que você não esqueça o que já estudou. A revisão espaçada, em intervalos crescentes (por padrão 1, 7, 15 e 30 dias), fixa o conteúdo na memória de longo prazo.",
-    fazer: ["Comece pelas “Atrasadas” e depois faça as “Para hoje”.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Precisa mudar algo? O lápis em cada revisão permite editar assunto, disciplina, tipo, data, situação ou excluir.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›).", "Cada revisão é “por dificuldade” ou “por erros”. Use o filtro de tipo para ver só uma delas. Marcar “Precisa de revisão” num conteúdo também cria a revisão aqui."],
+    fazer: ["Na Lista, as atrasadas aparecem primeiro, depois as de hoje, as futuras e, no fim, as concluídas. Use os filtros (tipo, situação, disciplina ou assunto) para ver só o que precisa.", "Ao revisar, clique em “Concluir”, registre como foi e agende a próxima, se precisar.", "Precisa mudar algo? O lápis em cada revisão permite editar assunto, disciplina, tipo, data, situação ou excluir.", "Use “Nova revisão” para agendar qualquer assunto. Marque “Criar série” para gerar todos os intervalos de uma vez.", "Confira as “Sugestões de reforço”: assuntos com acerto abaixo de 70% ou com erros recorrentes.", "No “Kanban”, arraste cada revisão entre A fazer, Em andamento e Concluída (no celular, use os botões ‹ ›).", "Cada revisão é “por dificuldade” ou “por erros”. Use o filtro de tipo para ver só uma delas. Marcar “Precisa de revisão” num conteúdo também cria a revisão aqui."],
     dica: "O número rosa no menu mostra quantas revisões vencem hoje ou estão atrasadas. Os intervalos mudam em “Configurar intervalos”.",
   },
   desempenho: {
@@ -1179,7 +1181,7 @@ function vVisao() {
     <div class="card"><div class="card-h"><h2>Próximos passos</h2><p>${cw ? esc(cw.nome) : ""}</p></div>
       ${nextC.length ? `<div class="subj">${nextC.map(cItem).join("")}</div>` : `<p class="muted small">Nenhum conteúdo pendente na semana atual.</p>`}</div>
     <div class="card"><div class="card-h"><h2>Revisões de hoje</h2><button class="btn sm ghost" data-go="revisoes">Ver todas</button></div>
-      ${revToday.length ? `<div class="list">${revToday.map(revItem).join("")}</div>` : `<p class="muted small">Nada para revisar hoje.</p>`}</div>
+      ${revToday.length ? `<div class="list">${revToday.map(r => revItem(r)).join("")}</div>` : `<p class="muted small">Nada para revisar hoje.</p>`}</div>
   </div>`;
   // gráficos
   const lbl = ws.map((w, i) => "S" + (i + 1));
@@ -1219,11 +1221,14 @@ function cItem(c) {
     <div class="right">${chip(STATUS, c.status)}</div>
   </div>`;
 }
-function revItem(r) {
+// situação de uma revisão (etiqueta e ordem da lista)
+const RSIT = { atrasada: ["Atrasada", "bad"], hoje: ["Para hoje", "pink"], futura: ["Futura", "pend"], concluida: ["Concluída", "ok"] };
+const rSit = (r, t = TODAY()) => r.status === "concluida" ? "concluida" : r.prevista && r.prevista < t ? "atrasada" : r.prevista === t ? "hoje" : "futura";
+function revItem(r, comSit) {
   const t = TODAY(); const late = r.status !== "concluida" && r.prevista && r.prevista < t;
-  return `<div class="li"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
-    <div class="body"><b>${esc(r.assunto || "Assunto")}</b><p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
-    <button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div>`;
+  return `<div class="li${comSit ? " rev-li" : ""}"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
+    <div class="body">${comSit ? `<div class="row" style="gap:6px"><b style="flex:1;min-width:0">${esc(r.assunto || "Assunto")}</b>${chip(RSIT, rSit(r, t))}</div>` : `<b>${esc(r.assunto || "Assunto")}</b>`}<p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
+    <div class="li-acts"><button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div></div>`;
 }
 
 /* ---------- Cronograma ---------- */
@@ -1551,20 +1556,22 @@ function simHistory() {
 }
 
 /* ---------- Revisões ---------- */
-let rf = { tipo: "" };
+let rf = { tipo: "", sit: "", disc: "", q: "" };
 function vRevisoes() {
-  const t = TODAY(); const rs = reviews().filter(r => !rf.tipo || rTipo(r) === rf.tipo); const st = settings();
+  const t = TODAY(); const st = settings();
+  const rs = reviews().filter(r => (!rf.tipo || rTipo(r) === rf.tipo) && (!rf.disc || r.disciplina === rf.disc) && (!rf.q || norm(r.assunto).includes(norm(rf.q))));
   const head = `<div class="page-h"><div><span class="eyebrow">Revisões</span><h1>Hora de revisar</h1><p>Crie revisões a partir de erros, conteúdos concluídos ou de qualquer assunto. Intervalos atuais: ${esc(st.intervalos)} dias.</p></div>
     <div class="row">${viewSeg("revisoes")}<button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
-  const today = rs.filter(r => r.status !== "concluida" && r.prevista === t);
-  const late = rs.filter(r => r.status !== "concluida" && r.prevista && r.prevista < t);
-  const fut = rs.filter(r => r.status !== "concluida" && (!r.prevista || r.prevista > t));
-  const allDone = rs.filter(r => r.status === "concluida").sort((a, b) => (b.concluidaEm || "").localeCompare(a.concluidaEm || "")), done = allDone.slice(0, 8);
+  const allDone = rs.filter(r => r.status === "concluida").sort((a, b) => (b.concluidaEm || "").localeCompare(a.concluidaEm || ""));
   const sug = reinforce();
-  const grp = (title, arr, emptyTxt, cls) => `<div class="card"><div class="card-h"><h2>${title}</h2><span class="chip ${cls}">${arr.length}</span></div>${arr.length ? `<div class="list">${arr.map(revItem).join("")}</div>` : `<p class="muted small">${emptyTxt}</p>`}</div>`;
   const sugHTML = (sug.length ? `<div class="card"><div class="card-h"><div><h2>Sugestões de reforço</h2><p>Assuntos com acerto abaixo de 70% ou erros recorrentes. O cronograma não é alterado.</p></div></div>
     <div class="list">${sug.map(s => `<div class="li"><div class="stripe warn"></div><div class="body"><b>${esc(s.assunto)}</b><p>${esc(s.disciplina)} · ${s.qr ? fmtPct(pct1(s.qc, s.qr)) + " de acerto" : "sem questões"} · ${s.erros} erro${s.erros === 1 ? "" : "s"}</p></div><button class="btn sm ghost" data-act="sug-review" data-a="${esc(s.assunto)}" data-d="${esc(s.disciplina)}" data-t="${s.erros ? "erros" : "dificuldade"}">Agendar revisão</button></div>`).join("")}</div></div>` : "");
-  const filt = `<div class="filters"><select id="rfTipo" aria-label="Tipo de revisão">${opts(Object.entries(RTIPOS), rf.tipo, "Todos os tipos")}</select>${rf.tipo ? `<span class="small muted" style="align-self:center">${rs.length} revis${rs.length === 1 ? "ão" : "ões"}</span>` : ""}</div>`;
+  const lista = VIEW.revisoes !== "kanban";
+  // lista única, como a do Caderno de erros: atrasadas (mais antigas primeiro), hoje, futuras e, por último, as concluídas (mais recentes primeiro)
+  const ordem = { atrasada: 0, hoje: 1, futura: 2, concluida: 3 };
+  const rl = rs.filter(r => !rf.sit || rSit(r, t) === rf.sit).sort((a, b) => ordem[rSit(a, t)] - ordem[rSit(b, t)] || (rSit(a, t) === "concluida" ? (b.concluidaEm || "").localeCompare(a.concluidaEm || "") : (a.prevista || "9999").localeCompare(b.prevista || "9999")));
+  const filtrando = rf.tipo || rf.disc || rf.q || (lista && rf.sit);
+  const filt = `<div class="filters"><select id="rfTipo" aria-label="Tipo de revisão">${opts(Object.entries(RTIPOS), rf.tipo, "Todos os tipos")}</select>${lista ? `<select id="rfSit" aria-label="Situação">${opts(Object.entries(RSIT).map(([k, v]) => [k, v[0] === "Para hoje" ? "Para hoje" : v[0] + "s"]), rf.sit, "Todas as situações")}</select>` : ""}<select id="rfDisc" aria-label="Disciplina">${opts(disciplinas(), rf.disc, "Todas as disciplinas")}</select><input id="rfQ" placeholder="Buscar assunto" value="${esc(rf.q)}">${filtrando ? `<span class="small muted" style="align-self:center">${(lista ? rl : rs).length} revis${(lista ? rl : rs).length === 1 ? "ão" : "ões"}</span>` : ""}</div>`;
   return head + (VIEW.revisoes === "kanban" ? "" : sugHTML) + filt
     + (VIEW.revisoes === "kanban" ? kanban("review", [
         { k: "pendente", title: "A fazer", cls: "pend", items: rs.filter(r => (r.status || "pendente") === "pendente"), empty: "Nenhuma revisão a fazer." },
@@ -1575,8 +1582,8 @@ function vRevisoes() {
         return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status === "andamento" ? "warn" : "line",
           body: `<b>${esc(r.assunto || "Assunto")}</b><p>${tipoChip(r)}</p><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
           open: `<span class="row" style="gap:6px"><button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button></span>` };
-      }) : `<div class="grid g3">${grp("Atrasadas", late, "Nenhuma revisão atrasada.", "bad")}${grp("Para hoje", today, "Nada previsto para hoje.", "pink")}${grp("Futuras", fut, "Nenhuma revisão agendada.", "")}</div>`)
-    + (done.length && VIEW.revisoes !== "kanban" ? `<div class="card"><div class="card-h"><h2>Concluídas recentemente</h2></div><div class="list">${done.map(revItem).join("")}</div></div>` : "") + (VIEW.revisoes === "kanban" ? sugHTML : "");
+      }) : `<div class="list">${rl.map(r => revItem(r, true)).join("") || `<div class="card"><p class="muted">${filtrando ? "Nenhuma revisão com esses filtros." : "Nenhuma revisão agendada. Use “Nova revisão” ou marque um conteúdo para revisar."}</p></div>`}</div>`)
+    + (VIEW.revisoes === "kanban" ? sugHTML : "");
 }
 // pre.id = editar uma revisão existente (qualquer status); sem id = nova revisão
 const CORIG = ["conteudo", "marcado", "manual"]; // origens em que origemId aponta para um conteúdo
@@ -2559,6 +2566,9 @@ function bindView() {
   on("#lfQ", "change", e => { lf.q = e.target.value; render(); });
   on("#mfQ", "change", e => { mf.q = e.target.value; render(); });
   on("#rfTipo", "change", e => { rf.tipo = e.target.value; render(); });
+  on("#rfSit", "change", e => { rf.sit = e.target.value; render(); });
+  on("#rfDisc", "change", e => { rf.disc = e.target.value; render(); });
+  on("#rfQ", "change", e => { rf.q = e.target.value; render(); });
   on("#sfDisc", "change", e => { sf.disc = e.target.value; render(); });
   on("#sfFonte", "change", e => { sf.fonte = e.target.value; render(); });
   on("#sfQtd", "change", e => { sf.qtd = e.target.value; render(); });
