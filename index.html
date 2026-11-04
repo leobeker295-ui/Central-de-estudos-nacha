@@ -403,9 +403,16 @@ tr:last-child td{border-bottom:0}
 .mm-view-h h2{margin:2px 0}
 .mm-view-h .icon-btn{font-size:1.3rem;font-weight:600}
 .mm-view-h .icon-btn:disabled{opacity:.3;cursor:default}
-.mm-big{all:unset;cursor:zoom-in;display:block;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.mm-big img{display:block;width:100%;max-height:62vh;object-fit:contain}
-.mm-big:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.mm-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mm-tools .icon-btn{font-size:1.2rem;font-weight:600;background:var(--field)}
+.mm-pct{min-width:46px;text-align:center;font-variant-numeric:tabular-nums;font-size:.85rem;font-weight:700}
+.mm-dica{margin-left:6px;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-stage{overflow:auto;height:clamp(420px,calc(100vh - 250px),1100px);background:#fff;border:1px solid var(--line);border-radius:12px;cursor:grab;overscroll-behavior:contain}
+.mm-stage.drag{cursor:grabbing}
+.mm-stage:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.mm-stage img{display:block;margin:0 auto;max-width:none;user-select:none;-webkit-user-drag:none}
+.mm-layout.wide{grid-template-columns:minmax(0,1fr)}
+.mm-layout.wide .mm-menu{display:none}
 @media (max-width:860px){.mm-layout{grid-template-columns:minmax(0,1fr)}.mm-menu{position:static;max-height:none}.mm-item img{width:56px;height:38px}}
 .mp-prev .mp-strip{display:flex;gap:8px;overflow-x:auto;margin-top:8px}
 .mp-prev canvas{height:120px;width:auto;border-radius:8px;border:1px solid var(--line);flex:none}
@@ -1075,7 +1082,7 @@ const HELP = {
   },
   mapas: {
     serve: "Guarda os seus mapas mentais como imagem, prontos para revisar: clique na miniatura e o mapa abre em tela cheia, com zoom para ler cada ramo.",
-    fazer: ["Cada disciplina é um módulo no menu: clique nela para abrir a lista dos mapas, em ordem alfabética. No computador o mapa escolhido aparece ao lado; no celular ele abre direto em tela cheia.", "Clique em “Novo mapa” e escolha um PDF ou uma imagem (PNG, JPG ou WebP). O PDF é convertido em PNG aqui mesmo, e cada página vira um mapa.", "Ligue o mapa a um conteúdo do cronograma: ele passa a aparecer com o botão “Mapa” nas revisões desse assunto.", "No mapa aberto, use a roda do mouse, a pinça no celular ou os botões + e − para ampliar, e arraste para andar. As setas passam para o próximo mapa.", "Filtre por disciplina ou busque pelo título para achar um mapa rápido."],
+    fazer: ["Cada disciplina é um módulo no menu: clique nela para abrir a lista dos mapas, em ordem alfabética. No computador o mapa escolhido aparece ao lado, nítido; no celular ele abre direto em tela cheia.", "No painel do mapa: + e − dão zoom, “Ajustar” volta ao tamanho inicial, arrastar move o mapa e o duplo clique amplia o ponto clicado. “Esconder menu” deixa o mapa com a largura toda.", "Clique em “Novo mapa” e escolha um PDF ou uma imagem (PNG, JPG ou WebP). O PDF é convertido em PNG aqui mesmo, e cada página vira um mapa.", "Ligue o mapa a um conteúdo do cronograma: ele passa a aparecer com o botão “Mapa” nas revisões desse assunto.", "No mapa aberto, use a roda do mouse, a pinça no celular ou os botões + e − para ampliar, e arraste para andar. As setas passam para o próximo mapa.", "Filtre por disciplina ou busque pelo título para achar um mapa rápido."],
     dica: "Só a imagem fica guardada, não o PDF. Os mapas ficam no espaço privado do login de vocês, na nuvem.",
   },
   lembretes: {
@@ -1926,7 +1933,8 @@ const mindmaps = () => all("mindmap").sort((a, b) => (b.criadoEm || "").localeCo
 const mapsOfReview = r => mindmaps().filter(m => { const c = get(m.contentId); return c && c.assunto === r.assunto; });
 const mapBtn = r => { const ms = mapsOfReview(r); return ms.length ? `<button class="btn sm ghost" data-act="open-map" data-id="${ms[0].id}" data-nav="${ms.map(m => m.id).join(",")}">${ic("map")}Mapa</button>` : ""; };
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-let pdfjsP = null, mf = { disc: null, q: "", sel: "" }; // mf.disc = módulo (disciplina) aberto no menu; mf.sel = mapa mostrado ao lado
+let pdfjsP = null, mf = { disc: null, q: "", sel: "", z: 1, wide: false }; // mf.disc = módulo (disciplina) aberto no menu; mf.sel = mapa mostrado ao lado; mf.z = zoom do painel
+try { mf.wide = localStorage.getItem("central-estudos-mapas-largo") === "1"; } catch (e) { }
 const celular = () => matchMedia("(max-width:860px)").matches;
 const loadPdfjs = () => pdfjsP || (pdfjsP = new Promise((ok, fail) => {
   const el = document.createElement("script"); el.src = PDFJS + "pdf.min.js";
@@ -1961,9 +1969,37 @@ async function signedUrls(paths) {
   if (need.length && sb) { const { data } = await sb.storage.from("mapas").createSignedUrls(need, 3600); (data || []).forEach(x => x.signedUrl && URLS.set(x.path, { url: x.signedUrl, ate: now + 3600000 })); }
   return paths.map(x => (URLS.get(x) || {}).url || "");
 }
+// painel do mapa: começa ajustado à largura, com zoom (botões, Ctrl+roda, duplo clique, teclas + − 0) e arrastar para mover
+function mmStage() {
+  const st = $("#mmStage"), im = $("#mmImg"); if (!st || !im) return;
+  const W = +im.dataset.w, H = +im.dataset.h, key = im.dataset.full;
+  if (mf.zKey !== key) { mf.zKey = key; mf.z = 1; mf.sx = 0; mf.sy = 0; } // outro mapa: volta ao ajustado
+  const fit = () => st.clientWidth, pct = () => { $("#mmPct").textContent = Math.round(mf.z * 100) + "%"; };
+  const size = z => { const w = fit() * z; im.style.width = w + "px"; im.style.height = w * H / W + "px"; };
+  const apply = (z, cx = st.clientWidth / 2, cy = st.clientHeight / 2) => {
+    z = Math.min(Math.max(1, W * 2 / fit()), Math.max(.5, z));
+    const r = im.getBoundingClientRect(), s0 = st.getBoundingClientRect();
+    const ox = (cx + s0.left - r.left) / r.width, oy = (cy + s0.top - r.top) / r.height; // ponto do mapa sob o cursor
+    mf.z = z; size(z); pct();
+    st.scrollLeft = ox * im.offsetWidth + im.offsetLeft - cx; st.scrollTop = oy * im.offsetHeight - cy;
+  };
+  size(mf.z); pct(); st.scrollLeft = mf.sx || 0; st.scrollTop = mf.sy || 0;
+  st.onscroll = () => { mf.sx = st.scrollLeft; mf.sy = st.scrollTop; };
+  document.querySelectorAll(".mm-tools [data-z]").forEach(b => b.onclick = () => { if (b.dataset.z === "fit") { apply(1); st.scrollTo(0, 0); } else apply(mf.z * (b.dataset.z === "in" ? 1.25 : .8)); });
+  st.ondblclick = e => { const s0 = st.getBoundingClientRect(); apply(mf.z < 1.9 ? 2 : 1, e.clientX - s0.left, e.clientY - s0.top); };
+  st.onwheel = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); const s0 = st.getBoundingClientRect(); apply(mf.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - s0.left, e.clientY - s0.top); };
+  let drag = null;
+  st.onpointerdown = e => { if (e.button !== 0 || e.pointerType === "touch") return; drag = { x: e.clientX, y: e.clientY, l: st.scrollLeft, t: st.scrollTop }; st.setPointerCapture(e.pointerId); st.classList.add("drag"); };
+  st.onpointermove = e => { if (drag) { st.scrollLeft = drag.l - (e.clientX - drag.x); st.scrollTop = drag.t - (e.clientY - drag.y); } };
+  st.onpointerup = st.onpointercancel = () => { drag = null; st.classList.remove("drag"); };
+  st.onkeydown = e => { if (e.key === "+" || e.key === "=") apply(mf.z * 1.25); else if (e.key === "-") apply(mf.z * .8); else if (e.key === "0") { apply(1); st.scrollTo(0, 0); } else return; e.preventDefault(); };
+  onresize = () => { if ($("#mmStage") === st) { size(mf.z); } };
+  // troca a miniatura pela imagem original (nítida) assim que ela carregar
+  signedUrls([key]).then(([u]) => { if (!u) return; const pre = new Image(); pre.onload = () => { if ($("#mmImg") !== im) return; im.src = u; im.classList.add("hd"); const l = $("#mmHd"); if (l) { l.textContent = "Arraste para mover · duplo clique amplia"; l.title = "Arraste para mover · duplo clique amplia · Ctrl + roda do mouse dá zoom · teclas + − 0"; } }; pre.src = u; }).catch(() => { });
+}
 async function fillThumbs() {
   const imgs = [...document.querySelectorAll("img[data-path]:not([src])")]; if (!imgs.length || !sb) return;
-  try { const us = await signedUrls(imgs.map(i => i.dataset.path)); imgs.forEach((i, n) => { if (us[n]) i.src = us[n]; }); } catch (e) { }
+  try { const us = await signedUrls(imgs.map(i => i.dataset.path)); imgs.forEach((i, n) => { if (us[n] && !i.getAttribute("src")) i.src = us[n]; }); } catch (e) { }
 }
 function vMapas() {
   const head = `<div class="page-h"><div><span class="eyebrow">Mapas mentais</span><h1>Revise com mapas</h1><p>Cada disciplina é um módulo: clique nela para ver os mapas em ordem alfabética. Suba mapas em PDF ou imagem (o PDF vira PNG aqui mesmo).</p></div>${sb && S.user ? `<button class="btn primary" data-act="new-map">${ic("plus")}Novo mapa</button>` : ""}</div>`;
@@ -1991,10 +2027,12 @@ function vMapas() {
   const prev = sel ? (() => { const c = get(sel.contentId), its = mapsOf(dOf(sel)), i = its.findIndex(m => m.id === sel.id);
     return `<section class="card mm-view" style="--mc:${cor(dOf(sel))}"><div class="mm-view-h"><div style="min-width:0"><span class="eyebrow">${esc(dOf(sel))} · ${i + 1} de ${its.length}</span><h2>${esc(sel.titulo || "Mapa mental")}</h2>${c ? `<p class="muted small">${esc(c.assunto)}</p>` : ""}</div>
       <div class="row"><button class="icon-btn" data-act="map-sel" data-id="${(its[i - 1] || {}).id || ""}" ${i > 0 ? "" : "disabled"} aria-label="Mapa anterior">‹</button><button class="icon-btn" data-act="map-sel" data-id="${(its[i + 1] || {}).id || ""}" ${i < its.length - 1 ? "" : "disabled"} aria-label="Próximo mapa">›</button><button class="icon-btn" data-act="edit-map" data-id="${sel.id}" aria-label="Editar mapa">${ic("edit")}</button></div></div>
-      <button class="mm-big" data-act="open-map" data-id="${sel.id}" data-nav="${its.map(m => m.id).join(",")}" aria-label="Abrir em tela cheia"><img data-path="${esc(sel.mini || sel.path)}" alt=""></button>
-      <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="open-map" data-id="${sel.id}" data-nav="${its.map(m => m.id).join(",")}">${ic("ext")}Abrir em tela cheia</button></div></section>`; })()
+      <div class="mm-tools"><button class="icon-btn" data-z="out" aria-label="Diminuir zoom" title="Diminuir">−</button><span class="mm-pct" id="mmPct">100%</span><button class="icon-btn" data-z="in" aria-label="Aumentar zoom" title="Ampliar">+</button><button class="btn sm ghost" data-z="fit">Ajustar</button>
+        <span class="muted small mm-dica" id="mmHd">Carregando a versão nítida…</span>
+        <button class="btn sm ghost" data-act="map-wide">${mf.wide ? "Mostrar menu" : "Esconder menu"}</button><button class="btn sm primary" data-act="open-map" data-id="${sel.id}" data-nav="${its.map(m => m.id).join(",")}">${ic("ext")}Tela cheia</button></div>
+      <div class="mm-stage" id="mmStage" tabindex="0" aria-label="Mapa: arraste para mover, duplo clique para ampliar"><img id="mmImg" data-path="${esc(sel.mini || sel.path)}" data-full="${esc(sel.path)}" data-w="${+sel.w || 2600}" data-h="${+sel.h || 1800}" alt="${esc(sel.titulo || "Mapa mental")}" draggable="false"></div></section>`; })()
     : `<section class="card mm-view">${empty("map", "Escolha um mapa", "Clique num módulo e depois num mapa para ver aqui.")}</section>`;
-  return head + `<div class="filters"><input id="mfQ" placeholder="Buscar mapa ou assunto" value="${esc(mf.q)}"></div><div class="mm-layout">${menu}${celular() ? "" : prev}</div>`;
+  return head + `<div class="filters"><input id="mfQ" placeholder="Buscar mapa ou assunto" value="${esc(mf.q)}"></div><div class="mm-layout${mf.wide && !celular() ? " wide" : ""}">${menu}${celular() ? "" : prev}</div>`;
 }
 function mapForm(m = {}) {
   const isNew = !m.id; let pages = null;
@@ -2490,6 +2528,7 @@ async function toggleContent(btn) {
 
 /* ================= eventos da view ================= */
 function bindView() {
+  mmStage();
   const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
   on("#cfWeek", "change", e => setCfSem(e.target.value));
   on("#cfDisc", "change", e => { cf.disc = e.target.value; render(); });
@@ -2528,6 +2567,7 @@ document.addEventListener("click", async e => {
     case "kmove": kMove(a.dataset.kkind, id, a.dataset.to); break;
     case "new-map": mapForm(mf.disc && mf.disc !== "Sem disciplina" ? { disciplina: mf.disc } : {}); break;
     case "map-disc": if (mf.q) { mf.q = ""; mf.disc = a.dataset.v; } else mf.disc = mf.disc === a.dataset.v ? "" : a.dataset.v; mf.sel = ""; render(); break;
+    case "map-wide": mf.wide = !mf.wide; try { localStorage.setItem("central-estudos-mapas-largo", mf.wide ? "1" : "0"); } catch (er) { } render(); break;
     case "map-sel": if (!id) break; if (celular()) openViewer(id, a.dataset.nav ? a.dataset.nav.split(",") : [id]); else { mf.sel = id; render(); } break;
     case "edit-map": mapForm(get(id)); break;
     case "open-map": openViewer(id, a.dataset.nav ? a.dataset.nav.split(",") : [id]); break;
