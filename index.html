@@ -443,6 +443,12 @@ details[open] > summary .chev-d{transform:rotate(-135deg);margin-bottom:-2px}
 .acc-cell .chip{min-width:64px;justify-content:center}
 .tbl-acc td{vertical-align:middle}
 .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.area-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.area-t{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.area-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.area-n{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.area-n b{font-family:var(--f-display);font-size:1.7rem;font-weight:800}.area-n small,.area-p small{color:var(--ink-3);font-size:.8rem}
+.area-p{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}.area-p b{font-size:.9rem}
+@media (max-width:600px){.area-g{grid-template-columns:1fr}}
 .wk-card{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:9px;background:var(--white)}
 .wk-card.futura{opacity:.72}
 .wk-card.atual{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
@@ -1834,6 +1840,17 @@ let pf = { week: "", disc: "", q: "", ord: "pior" };
 const accCls = a => a == null ? "" : a >= 80 ? "ok" : a >= 70 ? "and" : "bad";
 const accCor = a => a == null ? "var(--ink-3)" : a >= 80 ? "var(--ok)" : a >= 70 ? "var(--warn)" : "var(--bad)";
 const barCor = (p, cor) => `<div class="bar"><i style="width:${Math.max(0, Math.min(100, p || 0))}%;background:${cor}"></i></div>`;
+// áreas da prova (cada uma vale 50%): disciplinas de Conhecimentos Específicos; o resto é Conhecimentos Básicos
+const AREA_ESP = new Set(["Conhecimentos Específicos", "Fundamentos da Administração Pública", "Direito Administrativo", "Direito Constitucional", "Ética, Relacionamento e Atendimento no Serviço Público", "Gestão da Informação, Arquivologia e Redação Oficial"]);
+const areaDe = d => AREA_ESP.has(d) ? "Conhecimentos Específicos" : "Conhecimentos Básicos";
+function areasCard(rows) {
+  const soma = xs => { const qr = xs.reduce((a, x) => a + x.qr, 0), qc = xs.reduce((a, x) => a + x.qc, 0); return { qr, qc, acc: pct1(qc, qr) }; };
+  const tile = a => { const cs = contents().filter(c => areaDe(c.disciplina) === a && (!pf.disc || c.disciplina === pf.disc) && (!pf.week || c.weekId === pf.week)), feitos = cs.filter(c => c.status === "concluido").length, s = soma(rows.filter(x => areaDe(x.c.disciplina) === a));
+    return `<div class="area-t"><div class="area-h"><b>${a}</b><span class="chip pink">50% da prova</span></div>
+      <div class="area-n"><b class="num" style="color:${accCor(s.acc)}">${fmtPct(s.acc)}</b><small>de acertos · ${s.qc}/${s.qr} questões</small></div>${barCor(s.acc, accCor(s.acc))}
+      <div class="area-p"><small>Conteúdos estudados</small><b class="num">${feitos} de ${cs.length}</b></div>${bar(cs.length ? feitos / cs.length * 100 : 0)}</div>`; };
+  return `<div class="card"><div class="card-h"><div><h2>Básicos × Específicos</h2><p>cada área vale metade da prova · os específicos têm menos assuntos, então cada um pesa mais</p></div></div><div class="area-g">${tile("Conhecimentos Específicos")}${tile("Conhecimentos Básicos")}</div></div>`;
+}
 const FAIXAS = [["Abaixo de 50%", 0, 50, "var(--bad)"], ["De 50% a 69%", 50, 70, "color-mix(in srgb,var(--bad) 55%,var(--warn))"], ["De 70% a 79%", 70, 80, "var(--warn)"], ["80% ou mais", 80, 101, "var(--ok)"]];
 const PF_ORD = [["pior", "Pior acerto primeiro"], ["melhor", "Melhor acerto primeiro"], ["mais", "Mais questões"], ["az", "Ordem alfabética"], ["plano", "Ordem do cronograma"]];
 // números da aba (e do relatório) para um filtro { week, disc, q, ord }
@@ -1866,6 +1883,7 @@ function vDesempenho() {
       ${k("q", "Questões resolvidas", tot.qr, `${rows.length} assunto${rows.length === 1 ? "" : "s"} · ${escopo}`)}
       ${k("check", "Corretas", tot.qc, `${tot.qr - tot.qc} erradas`)}
       ${k("flag", "Abaixo de 70%", D.att.length, D.att.length ? `assunto${D.att.length === 1 ? "" : "s"} para reforçar` : "nenhum assunto")}</div>
+    ${areasCard(rows)}
     <div class="grid g2">
       <div class="card"><div class="card-h"><div><h2>Acertos por disciplina</h2><p>da menor para a maior</p></div></div><div class="hbs">${discBars(discs)}</div></div>
       <div class="card"><div class="card-h"><div><h2>Faixas de acerto</h2><p>quantos assuntos em cada faixa</p></div></div>${faixaBar(D.faixas)}</div>
