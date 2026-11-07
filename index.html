@@ -17,7 +17,7 @@
   --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
   --r:16px; --r-s:10px;
-  --frame:color-mix(in srgb,var(--lav) 76%,#8f93b3); --side:var(--lav); --side-ink:var(--ink-2); --side-mute:var(--ink-3); --foot:transparent; --foot-ink:var(--ink-3);
+  --frame:color-mix(in srgb,var(--lav) 76%,#8f93b3); --blue:#2F6FDB; --blue-soft:#E3EDFD; --purple:#7A4DDB; --purple-soft:#EEE7FD; --side:var(--lav); --side-ink:var(--ink-2); --side-mute:var(--ink-3); --foot:transparent; --foot-ink:var(--ink-3);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --pink:#FF7DBF; --pink-ink:#FF9ACD; --pink-soft:#4A2440;
@@ -25,14 +25,14 @@
   --ink:#F1ECF8; --ink-2:#C2B9D2; --ink-3:#8F86A0;
   --line:#352D42; --field:#2E2739;
   --ok:#5CC995; --ok-soft:#1E3A2E; --warn:#E5B04A; --warn-soft:#3D3120; --bad:#F07A8C; --bad-soft:#45222A;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark; --frame:color-mix(in srgb,var(--lav) 55%,#000)}}
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark; --frame:color-mix(in srgb,var(--lav) 55%,#000); --blue:#6FA2F5; --blue-soft:#1F2D46; --purple:#A98BF0; --purple-soft:#2E2445}}
 :root[data-theme="dark"]{
   --pink:#FF7DBF; --pink-ink:#FF9ACD; --pink-soft:#4A2440;
   --lav:#1C1726; --lav-deep:#2A2338; --white:#26202F;
   --ink:#F1ECF8; --ink-2:#C2B9D2; --ink-3:#8F86A0;
   --line:#352D42; --field:#2E2739;
   --ok:#5CC995; --ok-soft:#1E3A2E; --warn:#E5B04A; --warn-soft:#3D3120; --bad:#F07A8C; --bad-soft:#45222A;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark; --frame:color-mix(in srgb,var(--lav) 55%,#000)}
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark; --frame:color-mix(in srgb,var(--lav) 55%,#000); --blue:#6FA2F5; --blue-soft:#1F2D46; --purple:#A98BF0; --purple-soft:#2E2445}
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -65,7 +65,7 @@ a{color:var(--pink-ink)}
 /* layout "Painel suave": no computador o dash fica num quadro arredondado; menu por módulos e aba ativa preenchida */
 .side{background:var(--side);color:var(--side-ink)}
 .side .nav button{color:var(--side-ink)}
-.side .nav button:hover{background:color-mix(in srgb,var(--side-ink) 9%,transparent)}
+.side .nav button:hover,.sheet .nav button:hover{background:var(--pink-soft);color:var(--pink-ink)}
 .nav-g{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--side-mute);padding:12px 12px 4px;margin-top:6px;border-top:1px solid color-mix(in srgb,var(--side-ink) 12%,transparent)}
 .side .nav{gap:1px}
 .nav button[aria-current="page"],.side .nav button[aria-current="page"]{background:var(--pink);color:#fff;font-weight:700;box-shadow:0 6px 16px color-mix(in srgb,var(--pink) 30%,transparent)}
@@ -73,7 +73,8 @@ a{color:var(--pink-ink)}
 .nav button[aria-current="page"] .count{background:#fff;color:var(--pink-ink)}
 .me-row{display:flex;align-items:center;gap:4px}
 .me{all:unset;box-sizing:border-box;cursor:pointer;flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px}
-.me:hover{background:color-mix(in srgb,var(--side-ink) 9%,transparent)}
+.me:hover{background:var(--pink-soft)}
+.me:hover .me-t b{color:var(--pink-ink)}
 .me[aria-current="page"]{background:var(--white);box-shadow:var(--shadow)}
 .me[aria-current="page"] .me-t b{color:var(--ink)}.me[aria-current="page"] .me-t small{color:var(--ink-3)}
 .me-t{min-width:0;display:flex;flex-direction:column}
@@ -213,6 +214,18 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .chip.ok{background:var(--ok-soft);color:var(--ok)}
 .chip.bad{background:var(--bad-soft);color:var(--bad)}
 .chip.pink{background:var(--pink-soft);color:var(--pink-ink)}
+.chip.blue{background:var(--blue-soft);color:var(--blue)}.chip.purple{background:var(--purple-soft);color:var(--purple)}
+.stripe.blue{background:var(--blue)}.stripe.purple{background:var(--purple)}
+.fn-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.fn-row{display:grid;grid-template-columns:12px minmax(0,1fr) 110px 34px 96px;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.fn-row .inp{min-height:36px;padding:6px 10px}
+.fn-dot{width:12px;height:12px;border-radius:50%}
+.fn-n{text-align:center;font-family:var(--f-mono)}
+.fn-acts{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+.fn-acts .icon-btn{width:30px;height:30px;font-weight:700}
+.fn-acts .icon-btn:disabled{opacity:.3;cursor:default}
+@media (max-width:600px){.fn-row{grid-template-columns:12px minmax(0,1fr) auto;grid-template-areas:"d n c" ". s a"}.fn-dot{grid-area:d}.fn-nome{grid-area:n}.fn-n{grid-area:c}.fn-cor{grid-area:s}.fn-acts{grid-area:a;justify-content:flex-end}}
+.fn-lock{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:0 8px}
 .chip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
 
 /* KPIs */
@@ -395,6 +408,11 @@ tr:last-child td{border-bottom:0}
 .list{display:flex;flex-direction:column;gap:10px}
 .li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--white)}
 .li .body{flex:1;min-width:0}
+.scroll-box{max-height:460px;overflow-y:auto;overscroll-behavior:contain;padding:2px 6px 2px 2px;margin:0 -6px 0 -2px;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink-3) 55%,transparent) transparent}
+.scroll-box::-webkit-scrollbar{width:8px}.scroll-box::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ink-3) 55%,transparent);border-radius:8px}
+.sum-chev{list-style:none}.sum-chev::-webkit-details-marker{display:none}
+.chev-d{width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(45deg);transition:transform .15s;margin:0 6px 4px;display:inline-block}
+details[open] > summary .chev-d{transform:rotate(-135deg);margin-bottom:-2px}
 .li-acts{display:flex;align-items:center;gap:8px;flex:none}
 @media (max-width:860px){.rev-li{flex-wrap:wrap;position:relative;padding-left:24px}.rev-li .stripe{position:absolute;left:12px;top:12px;bottom:12px;height:auto}.rev-li .li-acts{flex-basis:100%;justify-content:flex-end}}
 .li .body b{display:block}
@@ -404,6 +422,70 @@ tr:last-child td{border-bottom:0}
 .stripe.bad{background:var(--bad)} .stripe.warn{background:var(--warn)} .stripe.ok{background:var(--ok)} .stripe.pink{background:var(--pink)}
 
 .chart{width:100%;height:auto;display:block}
+.kpis.desemp .kpi.ic > div{flex:1}
+.kpis.desemp .bar{margin-top:6px}
+.acc-k.ok .ico{background:var(--ok-soft);color:var(--ok)}.acc-k.and .ico{background:var(--warn-soft);color:var(--warn)}.acc-k.bad .ico{background:var(--bad-soft);color:var(--bad)}
+.hbs{display:flex;flex-direction:column;gap:2px;max-height:330px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.hb.acc{grid-template-columns:minmax(0,3fr) minmax(60px,3fr) 76px}
+.hb.acc .lbl small{display:block;color:var(--ink-3);font-size:.74rem}
+.hb.acc .v{display:flex;justify-content:flex-end}
+.fx-bar{display:flex;height:22px;border-radius:99px;overflow:hidden;background:var(--line);gap:2px;margin:6px 0 14px}
+.fx-bar i{display:block;height:100%}
+.fx-leg{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fx-leg li{display:grid;grid-template-columns:12px minmax(0,1fr) auto 46px;align-items:center;gap:10px;font-size:.88rem}
+.fx-leg li i{width:12px;height:12px;border-radius:4px}
+.fx-leg b{font-family:var(--f-mono)}.fx-leg em{font-style:normal;color:var(--ink-3);font-family:var(--f-mono);font-size:.8rem;text-align:right}
+.tbl-scroll{max-height:520px;overflow:auto;overscroll-behavior:contain}
+.tbl-scroll thead th{position:sticky;top:0;background:var(--white);z-index:1}
+.acc-cell{min-width:150px;display:flex;align-items:center;gap:10px}
+.acc-cell .bar{flex:1;min-width:50px}
+.acc-cell .chip{min-width:64px;justify-content:center}
+.tbl-acc td{vertical-align:middle}
+.wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.wk-card{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:9px;background:var(--white)}
+.wk-card.futura{opacity:.72}
+.wk-card.atual{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
+.wk-top{display:flex;align-items:center;gap:10px}
+.wk-top > div{flex:1;min-width:0}
+.wk-top b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-top small{color:var(--ink-3);font-size:.76rem}
+.wk-n{width:36px;height:36px;border-radius:11px;background:var(--pink-soft);color:var(--pink-ink);display:grid;place-items:center;font-weight:800;font-family:var(--f-display);flex:none}
+.wk-card.fechada .wk-n{background:var(--ok-soft);color:var(--ok)}
+.wk-l{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:10px;font-size:.82rem}
+.wk-l span{color:var(--ink-2)}
+.wk-l b{font-size:.8rem;font-family:var(--f-mono)}
+.wk-foot{display:flex;align-items:flex-end;gap:14px;border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.wk-foot > div{display:flex;flex-direction:column;gap:3px}
+.wk-foot small{font-size:.7rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.wk-foot b{font-size:1rem}
+.wk-foot .btn{margin-left:auto}
+#printArea{display:none}
+@media print{
+  body.print-rel{background:#fff!important}
+  body.print-rel > *:not(#printArea){display:none!important}
+  body.print-rel #printArea{display:block}
+  @page{margin:12mm}
+}
+#printArea{--ink:#1d1d2b;--ink-2:#444457;--ink-3:#6b6b80;--line:#e3e3ec;--white:#fff;--ok:#2E9E6B;--ok-soft:#E1F4EA;--warn:#B07A0E;--warn-soft:#FBF0D9;--bad:#D2455B;--bad-soft:#FBE3E7;
+  color:var(--ink);background:#fff;font-family:var(--f-body);font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#printArea .rl-h{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:3px solid var(--pink);padding-bottom:10px;margin-bottom:14px}
+#printArea .rl-h span{font-size:9pt;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:700}
+#printArea .rl-h h1{font-family:var(--f-display);font-size:20pt;margin:2px 0}
+#printArea .rl-h p{margin:0;color:var(--ink-2)}
+#printArea .rl-data{font-size:9pt;color:var(--ink-3);text-align:right}
+#printArea .rl-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+#printArea .rl-kpis div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+#printArea .rl-kpis label{display:block;font-size:8pt;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+#printArea .rl-kpis b{font-family:var(--f-display);font-size:16pt}
+#printArea .rl-sec{break-inside:avoid;margin-bottom:14px}
+#printArea .rl-sec h2{font-family:var(--f-display);font-size:13pt;margin:0 0 6px;display:flex;align-items:baseline;gap:8px}
+#printArea .rl-sec h2 small{font-family:var(--f-body);font-size:9pt;font-weight:500;color:var(--ink-3)}
+#printArea .rl-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#printArea table{font-size:9.5pt}
+#printArea th,#printArea td{padding:5px 8px;border-bottom:1px solid var(--line)}
+#printArea tr{break-inside:avoid}
+#printArea .chip{padding:2px 8px}
+#printArea .rl-pe{font-size:8.5pt;color:var(--ink-3);margin-top:10px}
 .chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10px}
 .chart .gl{stroke:var(--line);stroke-width:1}
 .rv-box{background:var(--field);border-radius:12px;padding:12px}
@@ -528,7 +610,7 @@ tr:last-child td{border-bottom:0}
 .pi-sw input{accent-color:var(--pink);margin:0}
 
 /* kanban */
-.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.kanban{display:grid;grid-template-columns:repeat(var(--kn,3),minmax(var(--kmin,0px),1fr));gap:16px;align-items:start;overflow-x:auto}
 .kcol{background:var(--lav-deep);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:var(--kh,640px);border:2px dashed transparent;transition:border-color .15s,background .15s}
 .kcol-b{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;margin:0 -6px;padding:2px 6px 6px;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink-3) 55%,transparent) transparent}
 .kcol-b::-webkit-scrollbar{width:8px}
@@ -613,6 +695,8 @@ tr:last-child td{border-bottom:0}
   .citem .right{grid-column:2}
   .hb{grid-template-columns:1fr 40px;gap:4px 10px;padding:6px 0}
   .hb .lbl{grid-column:1/-1}
+  .hb.acc{grid-template-columns:minmax(0,1fr) 76px}
+  .wk-grid{grid-template-columns:1fr}
   .li .body > .row > b{flex-basis:100%}
   .hero{padding:18px;border-radius:20px}
   .hero h1{font-size:1.7rem}
@@ -641,7 +725,7 @@ tr:last-child td{border-bottom:0}
   <aside class="side" aria-label="Menu">
     <div class="brand">
       <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H18"/><path d="m9 9 2 2 4-4"/></svg></div>
-      <div><b>Central de Estudos</b><small>Concurso público</small></div>
+      <div><b>Central de Estudos</b></div>
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="side-foot" id="sideFoot"></div>
@@ -749,8 +833,23 @@ const ic = (n, cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none"
 
 const ERR_CATS = ["Falta de conhecimento do conteúdo", "Esquecimento", "Interpretação equivocada", "Desatenção", "Confusão entre conceitos", "Dúvida sobre legislação", "Falta de tempo", "Outro"];
 const STATUS = { pendente: ["Pendente", "pend"], andamento: ["Em andamento", "and"], concluido: ["Concluído", "ok"] };
+// etapas dos funis: montadas a partir das preferências (montaFunis); estes objetos são atualizados no lugar
 const ESTATUS = { pendente: ["Pendente", "bad"], revisao: ["Em revisão", "and"], corrigido: ["Corrigido", "ok"] };
 const RSTATUS = { pendente: ["A fazer", "pend"], andamento: ["Em andamento", "and"], concluida: ["Concluída", "ok"] };
+// primeira e última etapa são fixas (o dash conta "corrigido"/"concluída" como resolvido); "sis" = usada pelo dash, não pode ser excluída
+const FUNIS_PADRAO = {
+  erros: [{ k: "pendente", nome: "Pendente", cor: "bad", fixo: 1 }, { k: "revisao", nome: "Em revisão", cor: "and", sis: 1 }, { k: "corrigido", nome: "Corrigido", cor: "ok", fixo: 2 }],
+  revisoes: [{ k: "pendente", nome: "A fazer", cor: "pend", fixo: 1 }, { k: "andamento", nome: "Em andamento", cor: "and", sis: 1 }, { k: "concluida", nome: "Concluída", cor: "ok", fixo: 2 }],
+};
+const CORES_ETAPA = { pend: ["Cinza", "line", ""], and: ["Amarelo", "warn", "warn"], bad: ["Vermelho", "bad", "bad"], pink: ["Rosa", "pink", "pink"], ok: ["Verde", "ok", "ok"], blue: ["Azul", "blue", "blue"], purple: ["Roxo", "purple", "purple"] }; // [nome, cor do traço, classe da faixa]
+function etapas(tipo) {
+  const pad = FUNIS_PADRAO[tipo], salvo = (settings().funis || {})[tipo] || [], de = k => salvo.find(x => x.k === k) || {};
+  const meio = salvo.filter(x => x.k !== pad[0].k && x.k !== pad[2].k && x.nome).map(x => Object.assign({}, pad.find(q => q.k === x.k) || {}, x));
+  pad.filter(q => q.sis && !meio.some(x => x.k === q.k)).forEach(q => meio.unshift(Object.assign({}, q))); // etapa do sistema sempre existe
+  return [Object.assign({}, pad[0], de(pad[0].k), { fixo: 1 }), ...meio, Object.assign({}, pad[2], de(pad[2].k), { fixo: 2 })];
+}
+function montaFunis() { for (const [obj, tipo] of [[ESTATUS, "erros"], [RSTATUS, "revisoes"]]) { Object.keys(obj).forEach(k => delete obj[k]); etapas(tipo).forEach(e => obj[e.k] = [e.nome, CORES_ETAPA[e.cor] ? e.cor : "pend"]); } }
+const corEtapa = (map, k) => CORES_ETAPA[(map[k] || map.pendente)[1]] || CORES_ETAPA.pend;
 const RTIPOS = { dificuldade: "Revisão por dificuldade", erros: "Revisão por erros" };
 const rTipo = r => RTIPOS[r.tipo] ? r.tipo : r.origem === "erro" || /^Erro/.test(r.motivo || "") ? "erros" : "dificuldade";
 const tipoChip = r => `<span class="chip ${rTipo(r) === "erros" ? "bad" : "pink"}" style="font-size:.7rem">${rTipo(r) === "erros" ? "por erros" : "por dificuldade"}</span>`;
@@ -1150,7 +1249,7 @@ const HELP = {
   },
   desempenho: {
     serve: "Mostra quanto você domina cada disciplina e assunto pelo percentual de acertos nas questões. É o termômetro da sua preparação para a prova.",
-    fazer: ["Lance as questões resolvidas e corretas dentro de cada conteúdo, nas Semanas ou no Cronograma. Os números desta aba vêm de lá.", "Filtre por semana, disciplina ou assunto.", "Abra os assuntos em “Merecem atenção” (abaixo de 70%) e planeje uma revisão ou mais questões."],
+    fazer: ["Lance as questões resolvidas e corretas dentro de cada conteúdo, nas Semanas ou no Cronograma. Os números desta aba vêm de lá.", "Filtre por semana, disciplina ou assunto: os indicadores, os gráficos e a tabela acompanham o filtro.", "Abra os assuntos em “Merecem atenção” (abaixo de 70%) e planeje uma revisão ou mais questões.", "Em “Gerar relatório”, salve um PDF com os indicadores e a lista por assunto, ou baixe a planilha para abrir no Excel."],
     dica: "Verde: 80% ou mais. Amarelo: de 70% a 79%. Vermelho: abaixo de 70%.",
   },
   horas: {
@@ -1166,7 +1265,7 @@ const HELP = {
 
   fechamentos: {
     serve: "Compara as semanas lado a lado (horas × meta, questões, acertos e conteúdos concluídos) para você enxergar sua evolução e ajustar o plano.",
-    fazer: ["Finalize cada semana na aba Semanas de estudo, na seção “Fechamento da semana”.", "Aqui, compare os gráficos e a tabela. Clique em “Ver resumo” para reler o fechamento de uma semana.", "Use o que aprendeu para definir as prioridades da semana seguinte."],
+    fazer: ["Finalize cada semana na aba Semanas de estudo, na seção “Fechamento da semana”.", "Aqui, compare os gráficos e os cartões de cada semana. Clique em “Fechada” para reler o fechamento de uma semana ou em “Abrir” para ir até ela.", "Use o que aprendeu para definir as prioridades da semana seguinte."],
     dica: "Cada métrica aparece separada de propósito: mais horas não significam, sozinhas, melhor desempenho.",
   },
   simulados: {
@@ -1209,7 +1308,7 @@ document.addEventListener("focusout", e => { const h = e.target.closest && e.tar
 /* ================= render ================= */
 function render() {
   if (animLock) return;
-  aplicaAparencia();
+  aplicaAparencia(); montaFunis();
   $("#nav").innerHTML = navGroups();
   const bn = [["visao", "Início", "home"], ["semanas", "Semanas", "weeks"], ["erros", "Erros", "err"], ["revisoes", "Revisões", "rev"]];
   $("#bnav").innerHTML = navHTML(bn) + `<button id="moreBtn" ${bn.some(b => b[0] === route) ? "" : 'aria-current="page"'}>${ic("more")}<span>Mais</span></button>`;
@@ -1229,7 +1328,6 @@ function render() {
   if (!S.ready) { $("#view").innerHTML = `<div class="card">${empty("spark", "Abrindo sua central", "Buscando seus registros…")}</div>`; return; }
   const pend = localPending().length;
   const v = { visao: vVisao, crono: vCrono, semanas: vSemanas, erros: vErros, simulados: vSimulados, revisoes: vRevisoes, desempenho: vDesempenho, horas: vHoras, biblioteca: vBiblioteca, mapas: vMapas, fechamentos: vFechamentos, lembretes: vLembretes, conta: vConta }[route];
-  const pl = settings().plano; $(".side .brand small").textContent = pl ? "Prefeitura de Curitiba" : "Concurso público";
   $("#view").innerHTML = (S.mode === "local" ? localBanner() : "") + (pend ? sendBanner(pend) : "") + (!settings().planoImportado && !pend ? planBanner() : "") + (hasExample() ? exampleBanner() : "") + (route === "visao" ? appBanner() : "") + v();
   const eb = $("#view .page-h .eyebrow") || $("#view .hero .eyebrow");
   if (eb && HELP[route]) eb.outerHTML = `<div class="eyebrow-row">${eb.outerHTML}${helpHTML(route)}</div>`;
@@ -1264,12 +1362,12 @@ function vVisao() {
   // próximos passos
   const cw = currentWeek();
   const nextC = contents().filter(c => c.status !== "concluido" && (c.weekId === (cw && cw.id) || (c.prevista && c.prevista <= t))).slice(0, 6);
-  const revToday = reviews().filter(r => r.status !== "concluida" && r.prevista && r.prevista <= t).slice(0, 6);
+  const revToday = reviews().filter(r => r.status !== "concluida" && r.prevista && r.prevista <= t);
   const steps = `<div class="grid g2">
     <div class="card"><div class="card-h"><h2>Próximos passos</h2><p>${cw ? esc(cw.nome) : ""}</p></div>
       ${nextC.length ? `<div class="subj">${nextC.map(cItem).join("")}</div>` : `<p class="muted small">Nenhum conteúdo pendente na semana atual.</p>`}</div>
-    <div class="card"><div class="card-h"><h2>Revisões de hoje</h2><button class="btn sm ghost" data-go="revisoes">Ver todas</button></div>
-      ${revToday.length ? `<div class="list">${revToday.map(r => revItem(r)).join("")}</div>` : `<p class="muted small">Nada para revisar hoje.</p>`}</div>
+    <div class="card"><div class="card-h"><h2>Revisões de hoje</h2><div class="row" style="gap:8px">${revToday.length ? `<span class="chip pink">${revToday.length}</span>` : ""}<button class="btn sm ghost" data-go="revisoes">Ver todas</button></div></div>
+      ${revToday.length ? `<div class="list scroll-box">${revToday.map(r => revItem(r)).join("")}</div>` : `<p class="muted small">Nada para revisar hoje.</p>`}</div>
   </div>`;
   // gráficos
   const lbl = ws.map((w, i) => "S" + (i + 1));
@@ -1317,7 +1415,7 @@ const rSit = (r, t = TODAY()) => r.status === "concluida" ? "concluida" : r.prev
 function revItem(r, comSit) {
   const t = TODAY(); const late = r.status !== "concluida" && r.prevista && r.prevista < t;
   return `<div class="li${comSit ? " rev-li" : ""}"><div class="stripe ${r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : ""}"></div>
-    <div class="body">${comSit ? `<div class="row" style="gap:6px"><b style="flex:1;min-width:0">${esc(r.assunto || "Assunto")}</b>${chip(RSIT, rSit(r, t))}</div>` : `<b>${esc(r.assunto || "Assunto")}</b>`}<p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status === "andamento" ? " · em andamento" : ""}</p></div>
+    <div class="body">${comSit ? `<div class="row" style="gap:6px"><b style="flex:1;min-width:0">${esc(r.assunto || "Assunto")}</b>${chip(RSIT, rSit(r, t))}</div>` : `<b>${esc(r.assunto || "Assunto")}</b>`}<p style="margin-top:4px">${tipoChip(r)}</p><p>${esc(r.disciplina || "")} · ${esc(r.motivo || "")} · ${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : (late ? "atrasada desde " : "prevista ") + fmtD(r.prevista)}${r.status && r.status !== "pendente" && r.status !== "concluida" && RSTATUS[r.status] ? " · " + esc(RSTATUS[r.status][0].toLowerCase()) : ""}</p></div>
     <div class="li-acts"><button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}${r.status !== "concluida" ? `<button class="btn sm primary" data-act="done-review" data-id="${r.id}">Concluir</button>` : `<button class="btn sm ghost" data-act="done-review" data-id="${r.id}">Ver</button>`}</div></div>`;
 }
 
@@ -1397,8 +1495,8 @@ function vSemanas() {
     <div class="card"><div class="card-h"><h2>Materiais da semana</h2><button class="btn sm ghost" data-go="biblioteca">Biblioteca</button></div>
       ${mats.length ? `<div class="list">${mats.slice(0, 6).map(matItem).join("")}</div>` : `<p class="muted small">Vincule links ou anexe arquivos dentro de cada conteúdo.</p>`}</div>
   </div>`;
-  const errs = `<div class="card"><div class="card-h"><h2>Principais erros</h2><button class="btn sm ghost" data-act="new-error" data-week="${w.id}">${ic("plus")}Registrar erro</button></div>
-    ${st.errs.length ? `<div class="list">${st.errs.slice(0, 5).map(errItem).join("")}</div>` : `<p class="muted small">Nenhum erro ligado aos conteúdos desta semana.</p>`}</div>`;
+  const errs = `<div class="card"><div class="card-h"><h2>Principais erros</h2><div class="row" style="gap:8px">${st.errs.length ? `<span class="chip bad">${st.errs.length}</span>` : ""}<button class="btn sm ghost" data-act="new-error" data-week="${w.id}">${ic("plus")}Registrar erro</button></div></div>
+    ${st.errs.length ? `<div class="list scroll-box">${st.errs.map(errItem).join("")}</div>` : `<p class="muted small">Nenhum erro ligado aos conteúdos desta semana.</p>`}</div>`;
   return `<div class="page-h"><div><span class="eyebrow">Semanas de estudo</span></div></div>` + tabs + head + list + reg + errs + closingSection(w);
 }
 
@@ -1450,7 +1548,7 @@ const VIEW = { erros: viewPref("erros"), revisoes: viewPref("revisoes") };
 const viewSeg = k => `<div class="seg" role="group" aria-label="Visualização"><button data-act="view" data-k="${k}" data-v="lista" aria-pressed="${VIEW[k] === "lista"}">Lista</button><button data-act="view" data-k="${k}" data-v="kanban" aria-pressed="${VIEW[k] === "kanban"}">Kanban</button></div>`;
 // cols: [{ k, title, cls, items, empty, more }]; card(item) devolve { stripe, body, open }
 function kanban(kind, cols, card) {
-  return `<div class="kanban">${cols.map((c, ci) => `<section class="kcol" data-kcol="${c.k}" data-kkind="${kind}" aria-label="${esc(c.title)}">
+  return `<div class="kanban" style="--kn:${cols.length};--kmin:${cols.length > 3 ? 220 : 0}px">${cols.map((c, ci) => `<section class="kcol" data-kcol="${c.k}" data-kkind="${kind}" aria-label="${esc(c.title)}">
     <div class="kcol-h"><h2>${c.title}</h2><span class="chip ${c.cls}">${c.items.length + (c.more || 0)}</span></div>
     <div class="kcol-b">${c.items.map(x => { const v = card(x), prev = cols[ci - 1], next = cols[ci + 1];
       return `<article class="kcard" draggable="true" data-kid="${x.id}" data-kkind="${kind}" style="border-left-color:var(--${v.stripe})">${v.body}
@@ -1491,14 +1589,14 @@ document.addEventListener("drop", e => {
 
 let ef = { disc: "", status: "", q: "", de: "", ate: "" };
 function errItem(e) {
-  return `<div class="li"><div class="stripe ${e.status === "corrigido" ? "ok" : e.status === "revisao" ? "warn" : "bad"}"></div>
+  return `<div class="li"><div class="stripe ${corEtapa(ESTATUS, e.status || "pendente")[2]}"></div>
     <div class="body"><div class="row" style="gap:6px"><b style="flex:1;min-width:0">${esc(e.assunto || "Assunto não informado")}</b>${chip(ESTATUS, e.status)}</div>
     <p>${esc(e.disciplina || "—")} · ${fmtD(e.data)}${e.categoria ? " · " + esc(e.categoria) : ""}${e.questao ? " · " + esc(e.questao) : ""}</p>
     ${e.explicacao ? `<p class="err-exp" title="${esc(e.explicacao)}">${esc(e.explicacao)}</p>` : ""}</div>
     <button class="icon-btn" data-act="edit-error" data-id="${e.id}" aria-label="Editar">${ic("edit")}</button></div>`;
 }
 function vErros() {
-  const head = `<div class="page-h"><div><span class="eyebrow">Caderno de erros</span><h1>O que errei e como corrigir</h1><p>Registre rápido, complete depois. Nenhum campo é obrigatório.</p></div><div class="row">${viewSeg("erros")}<button class="btn primary" data-act="new-error">${ic("plus")}Registrar erro</button></div></div>`;
+  const head = `<div class="page-h"><div><span class="eyebrow">Caderno de erros</span><h1>O que errei e como corrigir</h1><p>Registre rápido, complete depois. Nenhum campo é obrigatório.</p></div><div class="row">${viewSeg("erros")}<button class="btn ghost" data-act="funil" data-v="erros" title="Personalizar as etapas do funil">${ic("weeks")}Etapas</button><button class="btn primary" data-act="new-error">${ic("plus")}Registrar erro</button></div></div>`;
   const es = errors();
   if (!es.length) return head + `<div class="card">${empty("err", "Nenhum erro registrado", "Quando errar uma questão, anote aqui o motivo e a explicação certa. Os assuntos com mais erros aparecem destacados para revisão.", `<button class="btn primary" data-act="new-error">Registrar o primeiro erro</button>`)}</div>`;
   const list = es.filter(e => (!ef.disc || e.disciplina === ef.disc) && (!ef.status || VIEW.erros === "kanban" || e.status === ef.status) && (!ef.q || ((e.assunto || "") + " " + (e.enunciado || "")).toLowerCase().includes(ef.q.toLowerCase())) && (!ef.de || e.data >= ef.de) && (!ef.ate || e.data <= ef.ate));
@@ -1506,8 +1604,8 @@ function vErros() {
   const maxE = Math.max(1, ...top.map(t => t.erros));
   const cats = ERR_CATS.map(c => ({ l: c, n: es.filter(e => e.categoria === c).length })).filter(c => c.n);
   if (VIEW.erros === "kanban") return head + `<div class="filters"><select id="efDisc">${opts(disciplinas(), ef.disc, "Todas as disciplinas")}</select><input id="efQ" placeholder="Buscar assunto" value="${esc(ef.q)}"><input type="date" id="efDe" value="${ef.de}" aria-label="De"><input type="date" id="efAte" value="${ef.ate}" aria-label="Até"></div>`
-    + kanban("error", Object.entries(ESTATUS).map(([k, v]) => ({ k, title: v[0], cls: v[1], items: list.filter(e => (e.status || "pendente") === k), empty: "Nenhum erro aqui." })), e => ({
-      stripe: { pendente: "bad", revisao: "warn", corrigido: "ok" }[e.status || "pendente"],
+    + kanban("error", Object.entries(ESTATUS).map(([k, v]) => ({ k, title: v[0], cls: v[1], items: list.filter(e => (e.status || "pendente") === k || (k === "pendente" && !ESTATUS[e.status])), empty: "Nenhum erro aqui." })), e => ({
+      stripe: corEtapa(ESTATUS, e.status || "pendente")[1],
       body: `<b>${esc(e.assunto || "Assunto não informado")}</b><p>${esc(e.disciplina || "—")} · ${fmtD(e.data)}${e.categoria ? " · " + esc(e.categoria) : ""}</p>`,
       open: `<button class="btn sm ghost" data-act="edit-error" data-id="${e.id}">Abrir</button>` }));
   return head + `<div class="grid g2">
@@ -1651,7 +1749,7 @@ function vRevisoes() {
   const t = TODAY(); const st = settings();
   const rs = reviews().filter(r => (!rf.tipo || rTipo(r) === rf.tipo) && (!rf.disc || r.disciplina === rf.disc) && (!rf.q || norm(r.assunto).includes(norm(rf.q))));
   const head = `<div class="page-h"><div><span class="eyebrow">Revisões</span><h1>Hora de revisar</h1><p>Crie revisões a partir de erros, conteúdos concluídos ou de qualquer assunto. Intervalos atuais: ${esc(st.intervalos)} dias.</p></div>
-    <div class="row">${viewSeg("revisoes")}<button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
+    <div class="row">${viewSeg("revisoes")}<button class="btn ghost" data-act="funil" data-v="revisoes" title="Personalizar as etapas do funil">${ic("weeks")}Etapas</button><button class="btn ghost" data-act="rev-config">Configurar intervalos</button><button class="btn primary" data-act="new-review">${ic("plus")}Nova revisão</button></div></div>`;
   const allDone = rs.filter(r => r.status === "concluida").sort((a, b) => (b.concluidaEm || "").localeCompare(a.concluidaEm || ""));
   const sug = reinforce();
   const sugHTML = (sug.length ? `<div class="card"><div class="card-h"><div><h2>Sugestões de reforço</h2><p>Assuntos com acerto abaixo de 70% ou erros recorrentes. O cronograma não é alterado.</p></div></div>
@@ -1663,13 +1761,11 @@ function vRevisoes() {
   const filtrando = rf.tipo || rf.disc || rf.q || (lista && rf.sit);
   const filt = `<div class="filters"><select id="rfTipo" aria-label="Tipo de revisão">${opts(Object.entries(RTIPOS), rf.tipo, "Todos os tipos")}</select>${lista ? `<select id="rfSit" aria-label="Situação">${opts(Object.entries(RSIT).map(([k, v]) => [k, v[0] === "Para hoje" ? "Para hoje" : v[0] + "s"]), rf.sit, "Todas as situações")}</select>` : ""}<select id="rfDisc" aria-label="Disciplina">${opts(disciplinas(), rf.disc, "Todas as disciplinas")}</select><input id="rfQ" placeholder="Buscar assunto" value="${esc(rf.q)}">${filtrando ? `<span class="small muted" style="align-self:center">${(lista ? rl : rs).length} revis${(lista ? rl : rs).length === 1 ? "ão" : "ões"}</span>` : ""}</div>`;
   return head + (VIEW.revisoes === "kanban" ? "" : sugHTML) + filt
-    + (VIEW.revisoes === "kanban" ? kanban("review", [
-        { k: "pendente", title: "A fazer", cls: "pend", items: rs.filter(r => (r.status || "pendente") === "pendente"), empty: "Nenhuma revisão a fazer." },
-        { k: "andamento", title: "Em andamento", cls: "and", items: rs.filter(r => r.status === "andamento"), empty: "Arraste para cá a revisão que você começou." },
-        { k: "concluida", title: "Concluída", cls: "ok", items: allDone.slice(0, 20), more: Math.max(0, allDone.length - 20), empty: "Nenhuma revisão concluída ainda." },
-      ], r => {
+    + (VIEW.revisoes === "kanban" ? kanban("review", Object.entries(RSTATUS).map(([k, v]) => k === "concluida"
+        ? { k, title: v[0], cls: v[1], items: allDone.slice(0, 20), more: Math.max(0, allDone.length - 20), empty: "Nenhuma revisão concluída ainda." }
+        : { k, title: v[0], cls: v[1], items: rs.filter(r => (r.status || "pendente") === k || (k === "pendente" && !RSTATUS[r.status])), empty: k === "pendente" ? "Nenhuma revisão a fazer." : "Arraste para cá as revisões desta etapa." }), r => {
         const late = r.status !== "concluida" && r.prevista && r.prevista < t;
-        return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status === "andamento" ? "warn" : "line",
+        return { stripe: r.status === "concluida" ? "ok" : late ? "bad" : r.prevista === t ? "pink" : r.status && r.status !== "pendente" ? corEtapa(RSTATUS, r.status)[1] : "line",
           body: `<b>${esc(r.assunto || "Assunto")}</b><p>${tipoChip(r)}</p><p>${esc(r.disciplina || "")}${r.motivo ? " · " + esc(r.motivo) : ""}</p><p class="kdate ${late ? "late" : r.prevista === t && r.status !== "concluida" ? "today" : ""}">${r.status === "concluida" ? "feita em " + fmtD(r.concluidaEm) : late ? "atrasada desde " + fmtD(r.prevista) : r.prevista === t ? "para hoje" : "prevista " + fmtD(r.prevista)}</p>`,
           open: `<span class="row" style="gap:6px"><button class="icon-btn" data-act="edit-review" data-id="${r.id}" aria-label="Editar revisão" title="Editar">${ic("edit")}</button>${mapBtn(r)}<button class="btn sm ${r.status === "concluida" ? "ghost" : "primary"}" data-act="done-review" data-id="${r.id}">${r.status === "concluida" ? "Ver" : "Concluir"}</button></span>` };
       }) : `<div class="list">${rl.map(r => revItem(r, true)).join("") || `<div class="card"><p class="muted">${filtrando ? "Nenhuma revisão com esses filtros." : "Nenhuma revisão agendada. Use “Nova revisão” ou marque um conteúdo para revisar."}</p></div>`}</div>`)
@@ -1733,22 +1829,103 @@ function reviewDone(r) {
 }
 
 /* ---------- Desempenho ---------- */
-let pf = { week: "", disc: "", q: "" };
+let pf = { week: "", disc: "", q: "", ord: "pior" };
+const accCls = a => a == null ? "" : a >= 80 ? "ok" : a >= 70 ? "and" : "bad";
+const accCor = a => a == null ? "var(--ink-3)" : a >= 80 ? "var(--ok)" : a >= 70 ? "var(--warn)" : "var(--bad)";
+const barCor = (p, cor) => `<div class="bar"><i style="width:${Math.max(0, Math.min(100, p || 0))}%;background:${cor}"></i></div>`;
+const FAIXAS = [["Abaixo de 50%", 0, 50, "var(--bad)"], ["De 50% a 69%", 50, 70, "color-mix(in srgb,var(--bad) 55%,var(--warn))"], ["De 70% a 79%", 70, 80, "var(--warn)"], ["80% ou mais", 80, 101, "var(--ok)"]];
+const PF_ORD = [["pior", "Pior acerto primeiro"], ["melhor", "Melhor acerto primeiro"], ["mais", "Mais questões"], ["az", "Ordem alfabética"], ["plano", "Ordem do cronograma"]];
+// números da aba (e do relatório) para um filtro { week, disc, q, ord }
+function desempDados(f) {
+  const ws = weeks(), widx = new Map(ws.map((w, i) => [w.id, i]));
+  const base = contents().filter(c => +c.qResolvidas > 0);
+  const casa = c => (!f.disc || c.disciplina === f.disc) && (!f.q || ((c.assunto || "") + " " + (c.disciplina || "")).toLowerCase().includes(f.q.toLowerCase()));
+  const linha = c => { const qr = +c.qResolvidas, qc = Math.min(qr, +c.qCorretas || 0); return { c, qr, qc, acc: pct1(qc, qr), w: get(c.weekId) }; };
+  const rows = base.filter(c => casa(c) && (!f.week || c.weekId === f.week)).map(linha);
+  const soma = xs => { const qr = xs.reduce((a, x) => a + x.qr, 0), qc = xs.reduce((a, x) => a + x.qc, 0); return { qr, qc, acc: pct1(qc, qr) }; };
+  const discs = [...new Set(rows.map(x => x.c.disciplina || "—"))].map(d => { const xs = rows.filter(x => (x.c.disciplina || "—") === d); return Object.assign({ d, n: xs.length }, soma(xs)); }).sort((a, b) => (a.acc ?? 0) - (b.acc ?? 0));
+  const semanas = ws.map((w, i) => Object.assign({ w, lbl: "S" + (i + 1) }, soma(base.filter(c => casa(c) && c.weekId === w.id).map(linha))));
+  const faixas = FAIXAS.map(([l, de, ate, cor]) => ({ l, cor, n: rows.filter(x => x.acc >= de && x.acc < ate).length }));
+  const ord = { pior: (a, b) => a.acc - b.acc || b.qr - a.qr, melhor: (a, b) => b.acc - a.acc || b.qr - a.qr, mais: (a, b) => b.qr - a.qr, az: (a, b) => (a.c.assunto || "").localeCompare(b.c.assunto || "", "pt-BR"), plano: (a, b) => (widx.get(a.c.weekId) ?? 999) - (widx.get(b.c.weekId) ?? 999) }[f.ord] || (() => 0);
+  return { base, rows: rows.slice().sort(ord), discs, tot: soma(rows), semanas, faixas, att: rows.filter(x => x.acc < 70).sort((a, b) => a.acc - b.acc) };
+}
+const faixaBar = fx => { const t = fx.reduce((a, x) => a + x.n, 0) || 1; return `<div class="fx-bar" role="img" aria-label="${fx.map(x => `${x.l}: ${x.n}`).join(", ")}">${fx.filter(x => x.n).map(x => `<i style="width:${x.n / t * 100}%;background:${x.cor}" title="${x.l}: ${x.n}"></i>`).join("")}</div>
+  <ul class="fx-leg">${fx.map(x => `<li><i style="background:${x.cor}"></i><span>${x.l}</span><b class="num">${x.n}</b><em class="num">${Math.round(x.n / t * 100)}%</em></li>`).join("")}</ul>`; };
+const discBars = discs => discs.map(d => `<div class="hb acc"><span class="lbl" title="${esc(d.d)}">${esc(d.d)}<small>${d.qc}/${d.qr} questões</small></span>${barCor(d.acc, accCor(d.acc))}<span class="v"><span class="chip ${accCls(d.acc)}">${fmtPct(d.acc)}</span></span></div>`).join("");
 function vDesempenho() {
-  const head = `<div class="page-h"><div><span class="eyebrow">Desempenho por disciplina</span><h1>Questões e acertos</h1><p>Percentual de acertos = corretas ÷ resolvidas × 100. Não se confunde com o percentual de conclusão do cronograma.</p></div></div>`;
-  let cs = contents().filter(c => +c.qResolvidas > 0);
-  if (!cs.length) return head + `<div class="card">${empty("perf", "Sem questões registradas", "Abra um conteúdo e informe quantas questões resolveu e quantas acertou. O desempenho aparece aqui por disciplina e assunto.")}</div>`;
-  const filt = `<div class="filters"><select id="pfWeek">${opts(weeks().map(w => [w.id, w.nome]), pf.week, "Todas as semanas")}</select><select id="pfDisc">${opts(disciplinas(), pf.disc, "Todas as disciplinas")}</select><input id="pfQ" placeholder="Buscar assunto" value="${esc(pf.q)}"></div>`;
-  cs = cs.filter(c => (!pf.week || c.weekId === pf.week) && (!pf.disc || c.disciplina === pf.disc) && (!pf.q || (c.assunto || "").toLowerCase().includes(pf.q.toLowerCase())));
-  const discs = [...new Set(cs.map(c => c.disciplina || "—"))].map(d => { const x = cs.filter(c => (c.disciplina || "—") === d); const qr = x.reduce((a, c) => a + +c.qResolvidas, 0), qc = x.reduce((a, c) => a + (+c.qCorretas || 0), 0); return { d, qr, qc, acc: pct1(qc, qr), n: x.length }; }).sort((a, b) => (a.acc ?? 0) - (b.acc ?? 0));
-  const tot = discs.reduce((a, d) => ({ qr: a.qr + d.qr, qc: a.qc + d.qc }), { qr: 0, qc: 0 });
-  const att = cs.map(c => ({ c, acc: pct1(+c.qCorretas || 0, +c.qResolvidas) })).filter(x => x.acc < 70).sort((a, b) => a.acc - b.acc).slice(0, 6);
-  return head + filt + `<div class="kpis"><div class="kpi"><label>Resolvidas</label><b class="num">${tot.qr}</b></div><div class="kpi"><label>Corretas</label><b class="num">${tot.qc}</b></div><div class="kpi"><label>Erradas</label><b class="num">${tot.qr - tot.qc}</b></div><div class="kpi"><label>Acertos</label><b class="num">${fmtPct(pct1(tot.qc, tot.qr))}</b></div></div>
-    <div class="grid g2"><div class="card"><div class="card-h"><h2>Por disciplina</h2></div><div class="tbl-wrap"><table><thead><tr><th>Disciplina</th><th class="n">Resolvidas</th><th class="n">Corretas</th><th class="n">Acertos</th></tr></thead><tbody>
-      ${discs.map(d => `<tr><td>${esc(d.d)}</td><td class="n">${d.qr}</td><td class="n">${d.qc}</td><td class="n"><span class="chip ${d.acc >= 80 ? "ok" : d.acc >= 70 ? "and" : "bad"}">${fmtPct(d.acc)}</span></td></tr>`).join("")}</tbody></table></div></div>
-    <div class="card"><div class="card-h"><h2>Merecem atenção</h2><p>abaixo de 70%</p></div>${att.length ? `<div class="list">${att.map(x => `<div class="li"><div class="stripe bad"></div><div class="body"><b>${esc(x.c.assunto)}</b><p>${esc(x.c.disciplina)} · ${x.c.qCorretas || 0}/${x.c.qResolvidas} · ${fmtPct(x.acc)}</p></div><button class="btn sm ghost" data-act="open-content" data-id="${x.c.id}">Abrir</button></div>`).join("")}</div>` : `<p class="muted small">Todos os assuntos filtrados estão com 70% ou mais.</p>`}</div></div>
-    <div class="card"><div class="card-h"><h2>Por assunto</h2></div><div class="tbl-wrap"><table><thead><tr><th>Assunto</th><th>Disciplina</th><th>Semana</th><th class="n">Resolvidas</th><th class="n">Corretas</th><th class="n">Acertos</th></tr></thead><tbody>
-      ${cs.map(c => { const a = pct1(+c.qCorretas || 0, +c.qResolvidas); const w = get(c.weekId); return `<tr><td>${esc(c.assunto)}</td><td>${esc(c.disciplina)}</td><td>${esc(w ? w.nome : "")}</td><td class="n">${c.qResolvidas}</td><td class="n">${c.qCorretas || 0}</td><td class="n">${fmtPct(a)}</td></tr>`; }).join("")}</tbody></table></div></div>`;
+  const head = `<div class="page-h"><div><span class="eyebrow">Desempenho por disciplina</span><h1>Questões e acertos</h1><p>Percentual de acertos = corretas ÷ resolvidas × 100. Não se confunde com o percentual de conclusão do cronograma.</p></div>`;
+  if (!contents().some(c => +c.qResolvidas > 0)) return head + `</div><div class="card">${empty("perf", "Sem questões registradas", "Abra um conteúdo e informe quantas questões resolveu e quantas acertou. O desempenho aparece aqui por disciplina e assunto.")}</div>`;
+  const D = desempDados(pf), { tot, rows, discs, semanas } = D, wSel = pf.week && get(pf.week);
+  const filt = `<div class="filters"><select id="pfWeek" aria-label="Semana">${opts(weeks().map(w => [w.id, w.nome]), pf.week, "Todas as semanas")}</select><select id="pfDisc" aria-label="Disciplina">${opts(disciplinas(), pf.disc, "Todas as disciplinas")}</select><input id="pfQ" placeholder="Buscar assunto" value="${esc(pf.q)}" aria-label="Buscar assunto">${pf.week || pf.disc || pf.q ? `<button class="btn sm ghost" data-act="pf-limpa">${ic("x")}Limpar filtros</button>` : ""}</div>`;
+  if (!rows.length) return head + `<div class="row"><button class="btn primary" data-act="relatorio">${ic("file")}Gerar relatório</button></div></div>` + filt + `<div class="card">${empty("perf", "Nada neste filtro", "Nenhum assunto com questões lançadas para a semana, disciplina ou busca escolhida.")}</div>`;
+  const k = (i, l, v, sub, extra = "") => `<div class="kpi ic"><span class="ico">${ic(i)}</span><div><label>${l}</label><b class="num">${v}</b><small>${sub}</small>${extra}</div></div>`;
+  const maxQ = Math.max(...semanas.map(x => x.qr), 0), escopo = wSel ? esc(wSel.nome) : "todas as semanas";
+  return head + `<div class="row"><button class="btn primary" data-act="relatorio">${ic("file")}Gerar relatório</button></div></div>` + filt + `
+    <div class="kpis home2 desemp"><div class="kpi ic acc-k ${accCls(tot.acc)}"><span class="ico">${ic("perf")}</span><div><label>Acertos</label><b class="num">${fmtPct(tot.acc)}</b><small>${tot.acc >= 80 ? "ótimo nível" : tot.acc >= 70 ? "no caminho, dá para subir" : "precisa de reforço"}</small>${barCor(tot.acc, accCor(tot.acc))}</div></div>
+      ${k("q", "Questões resolvidas", tot.qr, `${rows.length} assunto${rows.length === 1 ? "" : "s"} · ${escopo}`)}
+      ${k("check", "Corretas", tot.qc, `${tot.qr - tot.qc} erradas`)}
+      ${k("flag", "Abaixo de 70%", D.att.length, D.att.length ? `assunto${D.att.length === 1 ? "" : "s"} para reforçar` : "nenhum assunto")}</div>
+    <div class="grid g2">
+      <div class="card"><div class="card-h"><div><h2>Acertos por disciplina</h2><p>da menor para a maior</p></div></div><div class="hbs">${discBars(discs)}</div></div>
+      <div class="card"><div class="card-h"><div><h2>Faixas de acerto</h2><p>quantos assuntos em cada faixa</p></div></div>${faixaBar(D.faixas)}</div>
+      <div class="card"><div class="card-h"><div><h2>Evolução dos acertos</h2><p>por semana${pf.disc ? " · " + esc(pf.disc) : ""} · tracejado = 70%</p></div></div>${lineChart(semanas.map(x => x.lbl), semanas.map(x => x.acc))}</div>
+      <div class="card"><div class="card-h"><div><h2>Questões por semana</h2><p>${wSel ? "em destaque, a semana filtrada" : "total resolvido em cada semana"}</p></div></div>${maxQ ? barChart(semanas.map(x => x.lbl), semanas.map(x => x.qr), { fmt: v => Math.round(v), alt: wSel ? semanas.map(x => x.w.id !== pf.week) : null }) : `<p class="muted small">Sem questões nas semanas.</p>`}</div>
+    </div>
+    <div class="card"><div class="card-h"><div><h2>Merecem atenção</h2><p>assuntos abaixo de 70%</p></div>${D.att.length ? `<span class="chip bad">${D.att.length}</span>` : ""}</div>${D.att.length ? `<div class="list scroll-box">${D.att.map(x => `<div class="li"><div class="stripe bad"></div><div class="body"><b>${esc(x.c.assunto)}</b><p>${esc(x.c.disciplina)}${x.w ? " · " + esc(x.w.nome) : ""} · ${x.qc}/${x.qr} · ${fmtPct(x.acc)}</p></div><button class="btn sm ghost" data-act="open-content" data-id="${x.c.id}">Abrir</button></div>`).join("")}</div>` : `<p class="muted small">Todos os assuntos filtrados estão com 70% ou mais.</p>`}</div>
+    <div class="card"><div class="card-h"><div><h2>Por assunto</h2><p>${rows.length} assunto${rows.length === 1 ? "" : "s"}</p></div><select id="pfOrd" class="inp" aria-label="Ordenar" style="width:auto;min-height:36px;padding:4px 10px">${opts(PF_ORD, pf.ord)}</select></div>
+      <div class="tbl-wrap tbl-scroll"><table class="tbl-acc"><thead><tr><th>Assunto</th><th>Semana</th><th class="n">Questões</th><th>Acertos</th><th></th></tr></thead><tbody>
+      ${rows.map(x => `<tr><td><b>${esc(x.c.assunto)}</b><small class="muted" style="display:block">${esc(x.c.disciplina)}</small></td><td class="small" style="white-space:nowrap">${esc(x.w ? x.w.nome : "—")}</td><td class="n">${x.qc}/${x.qr}</td><td><div class="acc-cell">${barCor(x.acc, accCor(x.acc))}<span class="chip ${accCls(x.acc)}">${fmtPct(x.acc)}</span></div></td><td><button class="icon-btn" data-act="open-content" data-id="${x.c.id}" aria-label="Abrir conteúdo">${ic("ext")}</button></td></tr>`).join("")}</tbody></table></div></div>`;
+}
+// relatório: escolhe o recorte e gera PDF (impressão) ou planilha
+function relatorioForm() {
+  openDrawer("Gerar relatório", `<form class="form" id="rlForm">
+    <p class="small muted full" style="margin:0">O relatório reúne os indicadores, os gráficos e a tabela por assunto do recorte escolhido. Em “Salvar PDF”, escolha “Salvar como PDF” na janela de impressão.</p>
+    ${fld("Semana", `<select name="week">${opts(weeks().map(w => [w.id, w.nome + (w.inicio ? ` · ${fmtD(w.inicio)}–${fmtD(w.fim)}` : "")]), pf.week, "Todas as semanas")}</select>`)}
+    ${fld("Disciplina", `<select name="disc">${opts(disciplinas(), pf.disc, "Todas as disciplinas")}</select>`)}
+    ${fld("Ordem dos assuntos", `<select name="ord">${opts(PF_ORD, pf.ord)}</select>`, "full")}
+    <label class="fld full toggle"><input type="checkbox" name="todos" checked><span>Incluir a lista completa por assunto</span></label>
+  </form>`, `<button class="btn ghost" id="rlCsv">${ic("dl")}Baixar planilha</button><button class="btn primary" id="rlPdf">${ic("file")}Salvar PDF</button>`);
+  const f = () => { const v = form($("#rlForm")); return { week: v.week, disc: v.disc, ord: v.ord, q: pf.q, todos: v.todos }; };
+  $("#rlCsv").onclick = () => { const x = f(), D = desempDados(x); if (!D.rows.length) { toast("Nada para exportar neste recorte"); return; } baixaCsv(D, x); };
+  $("#rlPdf").onclick = () => { const x = f(), D = desempDados(x); if (!D.rows.length) { toast("Nada para o relatório neste recorte"); return; } closeDrawer(); imprimeRelatorio(D, x); };
+}
+const recorteTxt = f => [f.week && get(f.week) ? get(f.week).nome : "Todas as semanas", f.disc || "Todas as disciplinas", f.q ? `busca “${f.q}”` : ""].filter(Boolean).join(" · ");
+function baixaCsv(D, f) {
+  const q = v => { v = String(v ?? ""); return /[";\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  const num = v => v == null ? "" : v.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  const linhas = [["Disciplina", "Assunto", "Semana", "Período", "Resolvidas", "Corretas", "Erradas", "Acertos (%)"]]
+    .concat(D.rows.map(x => [x.c.disciplina, x.c.assunto, x.w ? x.w.nome : "", x.w && x.w.inicio ? fmtD(x.w.inicio) + "–" + fmtD(x.w.fim) : "", x.qr, x.qc, x.qr - x.qc, num(x.acc)]))
+    .concat([[], ["Total", "", "", "", D.tot.qr, D.tot.qc, D.tot.qr - D.tot.qc, num(D.tot.acc)]]);
+  const blob = new Blob(["﻿" + linhas.map(l => l.map(q).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `desempenho-${(f.week && get(f.week) ? get(f.week).nome : "geral").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "-").toLowerCase()}-${TODAY()}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast("Planilha baixada");
+}
+function relatorioHTML(D, f) {
+  const sec = (t, inner, sub = "") => `<section class="rl-sec"><h2>${t}${sub ? `<small>${sub}</small>` : ""}</h2>${inner}</section>`;
+  const tblDisc = `<table><thead><tr><th>Disciplina</th><th class="n">Assuntos</th><th class="n">Resolvidas</th><th class="n">Corretas</th><th>Acertos</th></tr></thead><tbody>${D.discs.map(d => `<tr><td>${esc(d.d)}</td><td class="n">${d.n}</td><td class="n">${d.qr}</td><td class="n">${d.qc}</td><td><div class="acc-cell">${barCor(d.acc, accCor(d.acc))}<span class="chip ${accCls(d.acc)}">${fmtPct(d.acc)}</span></div></td></tr>`).join("")}</tbody></table>`;
+  const sem = D.semanas.filter(x => x.qr);
+  const tblSem = `<table><thead><tr><th>Semana</th><th>Período</th><th class="n">Resolvidas</th><th class="n">Corretas</th><th>Acertos</th></tr></thead><tbody>${sem.map(x => `<tr><td>${x.lbl} · ${esc(x.w.nome)}</td><td>${x.w.inicio ? fmtD(x.w.inicio) + "–" + fmtD(x.w.fim) : "—"}</td><td class="n">${x.qr}</td><td class="n">${x.qc}</td><td><span class="chip ${accCls(x.acc)}">${fmtPct(x.acc)}</span></td></tr>`).join("")}</tbody></table>`;
+  const tblAss = xs => `<table><thead><tr><th>Assunto</th><th>Disciplina</th><th>Semana</th><th class="n">Questões</th><th>Acertos</th></tr></thead><tbody>${xs.map(x => `<tr><td>${esc(x.c.assunto)}</td><td>${esc(x.c.disciplina)}</td><td>${esc(x.w ? x.w.nome : "—")}</td><td class="n">${x.qc}/${x.qr}</td><td><span class="chip ${accCls(x.acc)}">${fmtPct(x.acc)}</span></td></tr>`).join("")}</tbody></table>`;
+  const agora = new Date().toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
+  return `<header class="rl-h"><div><span>Central de Estudos · Relatório de desempenho</span><h1>${esc(nomeDe())}</h1><p>${esc(recorteTxt(f))}</p></div><p class="rl-data">Gerado em ${agora}</p></header>
+    <div class="rl-kpis"><div><label>Acertos</label><b style="color:${accCor(D.tot.acc)}">${fmtPct(D.tot.acc)}</b></div><div><label>Resolvidas</label><b>${D.tot.qr}</b></div><div><label>Corretas</label><b>${D.tot.qc}</b></div><div><label>Erradas</label><b>${D.tot.qr - D.tot.qc}</b></div><div><label>Assuntos</label><b>${D.rows.length}</b></div><div><label>Abaixo de 70%</label><b>${D.att.length}</b></div></div>
+    ${sec("Acertos por disciplina", tblDisc)}
+    <div class="rl-2">${sec("Faixas de acerto", faixaBar(D.faixas), "assuntos por faixa")}${sec("Evolução dos acertos", lineChart(D.semanas.map(x => x.lbl), D.semanas.map(x => x.acc), { h: 170 }), "por semana")}</div>
+    ${sem.length ? sec("Resumo por semana", tblSem) : ""}
+    ${D.att.length ? sec("Merecem atenção", tblAss(D.att), "abaixo de 70%") : ""}
+    ${f.todos ? sec("Todos os assuntos", tblAss(D.rows), PF_ORD.find(o => o[0] === f.ord)?.[1] || "") : ""}
+    <p class="rl-pe">Verde: 80% ou mais · Amarelo: de 70% a 79% · Vermelho: abaixo de 70%. Acertos = corretas ÷ resolvidas × 100.</p>`;
+}
+function imprimeRelatorio(D, f) {
+  let el = $("#printArea"); if (!el) { el = document.createElement("div"); el.id = "printArea"; document.body.appendChild(el); }
+  el.innerHTML = relatorioHTML(D, f);
+  const titulo = document.title; document.title = `Relatório de desempenho · ${recorteTxt(f)}`;
+  document.body.classList.add("print-rel");
+  const fim = () => { document.body.classList.remove("print-rel"); document.title = titulo; removeEventListener("afterprint", fim); };
+  addEventListener("afterprint", fim);
+  setTimeout(() => { try { window.print(); } catch (e) { } setTimeout(() => { if (!matchMedia("print").matches) fim(); }, 800); }, 60);
 }
 
 /* ---------- Horas líquidas ---------- */
@@ -1898,6 +2075,50 @@ async function corEscolhida(el, salvar) {
   if ((k === "bg" || k === "card") && !darkNow() && lum(v) < .45) { toast("Cor escura demais para fundo/cartões: o texto ficaria ilegível. Para fundo escuro, use o tema escuro."); el.value = coresDe(base)[k]; apRascunho = null; aplicaAparencia(); return; }
   apRascunho = { paleta: base.paleta, cores: Object.assign(coresDe(base), { [k]: v }) }; aplicaAparencia();
   if (salvar) { const ap = apRascunho; apRascunho = null; const pr = salvaSettings({ aparencia: ap }); render(); toast("Aparência salva"); await pr.catch(() => { }); }
+}
+
+/* ---------- Etapas dos funis ---------- */
+function funilForm(tipo) {
+  let lista = etapas(tipo).map(e => Object.assign({}, e)); const mover = {}; // etapa excluída → para onde vão os itens dela
+  const docs = () => tipo === "erros" ? errors() : reviews();
+  const contar = k => docs().filter(x => (x.status || "pendente") === k || Object.keys(mover).some(m => mover[m] === k && (x.status || "") === m)).length;
+  const ler = () => document.querySelectorAll("#fnList .fn-row").forEach((r, i) => { lista[i].nome = r.querySelector(".fn-nome").value; lista[i].cor = r.querySelector(".fn-cor").value; });
+  const desenha = () => {
+    $("#fnList").innerHTML = lista.map((e, i) => `<div class="fn-row"><span class="fn-dot" style="background:var(--${CORES_ETAPA[e.cor][1]})"></span><input class="inp fn-nome" value="${esc(e.nome)}" maxlength="24" aria-label="Nome da etapa ${i + 1}"><select class="inp fn-cor" aria-label="Cor da etapa ${i + 1}">${opts(Object.entries(CORES_ETAPA).map(([k, v]) => [k, v[0]]), e.cor)}</select><span class="small muted fn-n" title="itens nesta etapa">${contar(e.k)}</span>
+      <span class="fn-acts">${e.fixo ? `<span class="fn-lock">${e.fixo === 1 ? "início" : "fim"}</span>` : `<button type="button" class="icon-btn" data-fn="up" data-i="${i}" ${i <= 1 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" class="icon-btn" data-fn="down" data-i="${i}" ${i >= lista.length - 2 ? "disabled" : ""} aria-label="Descer">↓</button>${e.sis ? `<span class="icon-btn" title="Etapa usada pelo dash: pode renomear, mas não excluir">${ic("flag")}</span>` : `<button type="button" class="icon-btn" data-fn="del" data-i="${i}" aria-label="Excluir etapa">${ic("trash")}</button>`}`}</span></div>`).join("");
+  };
+  const fixas = tipo === "erros" ? "“Pendente” é onde o erro entra e “Corrigido” conta como resolvido. “Em revisão” é usada pelos Simulados." : "“A fazer” é onde a revisão entra e “Concluída” registra a data em que foi feita. “Em andamento” também é usada pelo dash.";
+  openDrawer(`Etapas · ${tipo === "erros" ? "Caderno de erros" : "Revisões"}`, `<p class="small muted">A primeira e a última etapa são fixas. ${fixas} Todas podem ser renomeadas e mudar de cor; crie etapas no meio e mude a ordem com as setas.</p><div id="fnList" class="fn-list"></div><div class="row" style="justify-content:space-between"><button type="button" class="btn sm ghost" id="fnAdd">${ic("plus")}Nova etapa</button><button type="button" class="btn sm ghost" id="fnPad">Restaurar padrão</button></div>`,
+    `<button class="btn ghost" id="fnCancel">Cancelar</button><button class="btn primary" id="fnSave">Salvar etapas</button>`);
+  desenha();
+  $("#fnList").addEventListener("change", e => { if (e.target.classList.contains("fn-cor")) { ler(); desenha(); } });
+  $("#fnList").addEventListener("click", async e => {
+    const b = e.target.closest("[data-fn]"); if (!b) return; ler(); const i = +b.dataset.i;
+    if (b.dataset.fn === "up") [lista[i - 1], lista[i]] = [lista[i], lista[i - 1]];
+    if (b.dataset.fn === "down") [lista[i + 1], lista[i]] = [lista[i], lista[i + 1]];
+    if (b.dataset.fn === "del") {
+      const n = contar(lista[i].k), dest = lista[i - 1];
+      if (n && !await confirmBox("Excluir esta etapa?", `${n} ${tipo === "erros" ? "erro" : "revisão"}${n === 1 ? "" : "s"} nesta etapa vão para “${dest.nome}”.`)) return;
+      Object.keys(mover).forEach(m => { if (mover[m] === lista[i].k) mover[m] = dest.k; }); mover[lista[i].k] = dest.k; lista.splice(i, 1);
+    }
+    desenha();
+  });
+  $("#fnAdd").onclick = () => { ler(); lista.splice(lista.length - 1, 0, { k: "et_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), nome: "Nova etapa", cor: "blue" }); desenha(); const ins = document.querySelectorAll("#fnList .fn-nome"); ins[ins.length - 2].select(); };
+  $("#fnCancel").onclick = closeDrawer;
+  $("#fnPad").onclick = () => { ler(); lista.filter(e => !FUNIS_PADRAO[tipo].some(q => q.k === e.k)).forEach(e => { mover[e.k] = FUNIS_PADRAO[tipo][0].k; }); lista = FUNIS_PADRAO[tipo].map(e => Object.assign({}, e)); desenha(); toast("Etapas padrão: clique em Salvar para aplicar"); };
+  $("#fnSave").onclick = async () => {
+    ler(); lista.forEach(e => e.nome = e.nome.trim());
+    if (lista.some(e => !e.nome)) { toast("Dê um nome a todas as etapas"); return; }
+    if (new Set(lista.map(e => e.nome.toLowerCase())).size !== lista.length) { toast("Há duas etapas com o mesmo nome"); return; }
+    const antes = Object.assign({}, tipo === "erros" ? ESTATUS : RSTATUS);
+    await salvaSettings({ funis: Object.assign({}, settings().funis || {}, { [tipo]: lista.map(({ k, nome, cor }) => ({ k, nome, cor })) }) });
+    for (const x of docs().filter(x => mover[x.status])) {
+      const para = mover[x.status], rec = Object.assign({}, x, { status: para });
+      if (tipo === "erros") rec.historico = (x.historico || []).concat([{ em: new Date().toISOString(), de: (antes[x.status] || [x.status])[0], para: (lista.find(e => e.k === para) || {}).nome || para }]);
+      await put(rec);
+    }
+    closeDrawer(); toast("Etapas salvas"); render();
+  };
 }
 
 /* ---------- Timer de estudo ---------- */
@@ -2342,7 +2563,7 @@ function vLembretes() {
   if (!rs.length) return head + `<div class="card">${empty("note", "Nenhum lembrete ainda", "Anote prazos, tarefas e recados com uma data. Eles aparecem aqui e no topo da Visão geral até você marcar como feitos.", `<button class="btn primary" data-act="new-reminder">Criar o primeiro lembrete</button>`)}</div>`;
   return head + (open.length ? "" : `<div class="card"><p class="muted">Tudo em dia: nenhum lembrete em aberto.</p></div>`)
     + grp("Atrasados", open.filter(r => r.data < t), "bad") + grp("Hoje", open.filter(r => r.data === t), "pink") + grp("Próximos", open.filter(r => r.data > t), "")
-    + (done.length ? `<div class="card"><details><summary class="card-h" style="margin:0;cursor:pointer"><h2>Concluídos</h2><span class="row" style="gap:8px"><span class="chip ok">${done.length}</span><span class="small muted">mostrar / esconder</span></span></summary><div class="postits" style="margin-top:14px">${done.slice(0, 24).map(postit).join("")}</div></details></div>` : "");
+    + (done.length ? `<div class="card"><details><summary class="card-h sum-chev" style="margin:0;cursor:pointer" title="Mostrar ou esconder"><h2>Concluídos</h2><span class="row" style="gap:8px"><span class="chip ok">${done.length}</span><span class="chev-d" aria-hidden="true"></span></span></summary><div class="postits" style="margin-top:14px">${done.slice(0, 24).map(postit).join("")}</div></details></div>` : "");
 }
 function reminderForm(r = {}) {
   const isNew = !r.id, cor = PCORES[r.cor] ? r.cor : "amarelo";
@@ -2374,7 +2595,7 @@ function vFechamentos() {
   const head = `<div class="page-h"><div><span class="eyebrow">Fechamentos semanais</span><h1>Histórico das semanas</h1><p>Cada métrica aparece separada. Mais horas não significam, sozinhas, melhor desempenho.</p></div></div>`;
   if (!ws.length) return head + `<div class="card">${empty("close", "Sem semanas para comparar", "O histórico aparece quando houver semanas com registros.")}</div>`;
   const st = ws.map(w => ({ w, s: weekStats(w.id), c: closingOf(w.id) }));
-  const lbl = ws.map((w, i) => "S" + (i + 1));
+  const lbl = ws.map((w, i) => "S" + (i + 1)), cur = weekOfDate(TODAY());
   const revSubj = bySubject().filter(s => s.revisoes).sort((a, b) => b.revisoes - a.revisoes).slice(0, 6);
   const maxR = Math.max(1, ...revSubj.map(r => r.revisoes));
   return head + `<div class="grid g2">
@@ -2382,9 +2603,20 @@ function vFechamentos() {
     <div class="card"><div class="card-h"><h2>Acertos por semana</h2></div>${lineChart(lbl, st.map(x => x.s.acc))}</div>
     <div class="card"><div class="card-h"><h2>Questões resolvidas</h2></div>${barChart(lbl, st.map(x => x.s.qr), { fmt: v => Math.round(v) })}</div>
     <div class="card"><div class="card-h"><h2>Assuntos com mais revisões</h2></div>${revSubj.length ? hbars(revSubj.map(r => ({ l: r.assunto, p: r.revisoes / maxR * 100, v: r.revisoes }))) : `<p class="muted small">Ainda sem revisões registradas.</p>`}</div></div>
-    <div class="card"><div class="card-h"><h2>Resumo por semana</h2></div><div class="tbl-wrap"><table><thead><tr><th>Semana</th><th>Período</th><th class="n">Horas</th><th class="n">Meta</th><th class="n">% meta</th><th class="n">Fim de semana</th><th class="n">Questões</th><th class="n">Acertos</th><th class="n">Concluídos</th><th>Fechamento</th></tr></thead><tbody>
-    ${st.map(({ w, s, c }) => `<tr><td><button class="btn sm ghost" data-go="semanas" data-week="${w.id}">${esc(w.nome)}</button></td><td class="num small">${w.inicio ? fmtD(w.inicio) + "–" + fmtD(w.fim) : "—"}</td><td class="n">${hm(s.min)}</td><td class="n">${s.meta ? hm(s.meta) : "—"}</td><td class="n">${s.meta ? Math.round(s.min / s.meta * 100) + "%" : "—"}</td><td class="n">${s.minFds || s.metaFds ? hm(s.minFds) + (s.metaFds ? " / " + hm(s.metaFds) : "") : "—"}</td><td class="n">${s.qr}</td><td class="n">${fmtPct(s.acc)}</td><td class="n">${s.done}/${s.total}</td><td>${c && c.finalizadaEm ? `<button class="chip ok" style="border:0;cursor:pointer" data-act="week-summary" data-id="${w.id}"><i></i>Ver resumo</button>` : `<span class="chip">Aberto</span>`}</td></tr>`).join("")}
-    </tbody></table></div></div>`;
+    <div class="card"><div class="card-h"><div><h2>Resumo por semana</h2><p>barra verde = meta batida · amarela = 70% ou mais · vermelha = abaixo</p></div></div>
+    <div class="wk-grid">${st.map(({ w, s, c }, i) => {
+      const atual = cur && cur.id === w.id, futura = !atual && w.inicio && w.inicio > TODAY() && !s.min, pm = s.meta ? s.min / s.meta * 100 : null, pf2 = s.metaFds ? s.minFds / s.metaFds * 100 : null;
+      const cor = p => p == null || futura ? "var(--pink)" : p >= 100 ? "var(--ok)" : p >= 70 ? "var(--warn)" : "var(--bad)";
+      const linha = (l, p, txt, corB) => `<div class="wk-l"><span>${l}</span>${barCor(p == null ? 0 : p, corB)}<b class="num">${txt}</b></div>`;
+      return `<article class="wk-card${atual ? " atual" : ""}${futura ? " futura" : ""}${c && c.finalizadaEm ? " fechada" : ""}">
+        <div class="wk-top"><span class="wk-n">S${i + 1}</span><div><b>${esc(w.nome)}</b><small>${w.inicio ? fmtD(w.inicio) + " – " + fmtD(w.fim) : "sem datas"}${atual ? " · semana atual" : ""}</small></div>
+          ${c && c.finalizadaEm ? `<button class="chip ok" style="border:0;cursor:pointer" data-act="week-summary" data-id="${w.id}"><i></i>Fechada</button>` : `<span class="chip">${futura ? "A começar" : "Aberta"}</span>`}</div>
+        ${linha("Horas", pm, `${hm(s.min)}${s.meta ? ` / ${hm(s.meta)}` : ""}`, cor(pm))}
+        ${s.minFds || s.metaFds ? linha("Fim de semana", pf2, `${hm(s.minFds)}${s.metaFds ? ` / ${hm(s.metaFds)}` : ""}`, cor(pf2)) : ""}
+        ${linha("Conteúdos", s.pct, `${s.done}/${s.total}`, s.pct >= 100 ? "var(--ok)" : "var(--pink)")}
+        <div class="wk-foot"><div><small>Questões</small><b class="num">${s.qr}</b></div><div><small>Acertos</small><span class="chip ${accCls(s.acc)}">${fmtPct(s.acc)}</span></div><div><small>% da meta</small><b class="num" style="color:${pm == null || futura ? "var(--ink-3)" : cor(pm)}">${pm == null || futura ? "—" : Math.round(pm) + "%"}</b></div>
+          <button class="btn sm ghost" data-go="semanas" data-week="${w.id}">Abrir</button></div>
+      </article>`; }).join("")}</div></div>`;
 }
 
 /* ================= formulários de semana e conteúdo ================= */
@@ -2724,6 +2956,7 @@ function bindView() {
   on("#pfWeek", "change", e => { pf.week = e.target.value; render(); });
   on("#pfDisc", "change", e => { pf.disc = e.target.value; render(); });
   on("#pfQ", "change", e => { pf.q = e.target.value; render(); });
+  on("#pfOrd", "change", e => { pf.ord = e.target.value; render(); });
   on("#lfDisc", "change", e => { lf.disc = e.target.value; render(); });
   on("#lfWeek", "change", e => { lf.week = e.target.value; render(); });
   on("#lfQ", "change", e => { lf.q = e.target.value; render(); });
@@ -2771,6 +3004,9 @@ document.addEventListener("click", async e => {
     case "done-review": reviewDone(get(id)); break;
     case "edit-review": reviewForm(get(id)); break;
     case "crono-sem": setCfSem(a.dataset.v); scrollTo({ top: 0 }); break;
+    case "funil": funilForm(a.dataset.v); break;
+    case "relatorio": relatorioForm(); break;
+    case "pf-limpa": pf = Object.assign(pf, { week: "", disc: "", q: "" }); render(); break;
     case "pal": { apRascunho = null; const pr = salvaSettings({ aparencia: { paleta: a.dataset.v, cores: null } }); render(); toast(a.dataset.v === "lavanda" ? "Cores padrão restauradas" : "Paleta aplicada"); await pr.catch(() => { }); break; }
     case "tema": try { if (a.dataset.v === "auto") localStorage.removeItem("central-estudos-tema"); else localStorage.setItem("central-estudos-tema", a.dataset.v); } catch (er) { } if (a.dataset.v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = a.dataset.v; paintThemeBtn(); render(); break;
     case "foto-del": { const old = perfil().foto, pr = salvaSettings({ perfil: Object.assign(perfil(), { foto: "" }) }); render(); toast("Foto removida"); await pr.catch(() => { }); if (old && sb) sb.storage.from("mapas").remove([old]).catch(() => { }); break; }
