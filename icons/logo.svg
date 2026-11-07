@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Logo: luminária iluminando um livro aberto">
+  <rect width="512" height="512" fill="#0B1530"/>
+  <circle cx="256" cy="236" r="168" fill="#FDB827"/>
+  <polygon points="213,198 315,283 362,374 118,374" fill="#FFFFFF" opacity="0.4"/>
+  <rect x="330" y="392" width="96" height="22" rx="11" fill="#FFFFFF"/>
+  <line x1="378" y1="394" x2="408" y2="262" stroke="#0B1530" stroke-width="14" stroke-linecap="round"/>
+  <line x1="408" y1="262" x2="318" y2="176" stroke="#0B1530" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="408" cy="262" r="17" fill="#FFFFFF"/>
+  <g transform="translate(318 176) rotate(40)">
+    <circle cx="0" cy="84" r="22" fill="#FFF6D6"/>
+    <rect x="-13" y="-16" width="26" height="26" rx="5" fill="#0B1530"/>
+    <polygon points="-17,6 17,6 66,84 -66,84" fill="#0B1530"/>
+  </g>
+  <path d="M256 372 Q196 352 124 362 L102 414 Q186 406 256 426 Z" fill="#FFFFFF"/>
+  <path d="M256 372 Q316 352 388 362 L410 414 Q326 406 256 426 Z" fill="#FFFFFF"/>
+  <line x1="256" y1="374" x2="256" y2="424" stroke="#0B1530" stroke-width="5"/>
+</svg>
