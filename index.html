@@ -524,6 +524,17 @@ details[open] > summary .chev-d{transform:rotate(-135deg);margin-bottom:-2px}
 .sim-score > div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .sim-score b{font-family:var(--f-display);font-size:2.4rem;font-weight:800}
 @media (max-width:860px){.sim-form{grid-template-columns:1fr}}
+.sim-cont{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.sim-cont-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.sim-cont-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.sim-ck{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:.88rem;background:var(--white)}
+.sim-ck:hover{border-color:var(--pink)}
+.sim-ck:has(input:checked){border-color:var(--pink);background:var(--pink-soft)}
+.sim-ck input{width:18px;height:18px;accent-color:var(--pink);flex:none;margin:0}
+.sim-ck span{flex:1;min-width:0}
+.sim-ck em{font-style:normal;font-size:.75rem;color:var(--ink-3);background:var(--line);border-radius:99px;padding:1px 8px}
+.sim-ck.vazio{opacity:.55}
+@media (max-width:600px){.sim-cont-l{grid-template-columns:1fr}}
 
 /* mapas mentais */
 .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
@@ -642,9 +653,9 @@ details[open] > summary .chev-d{transform:rotate(-135deg);margin-bottom:-2px}
 @media (max-width:860px){.kanban{grid-template-columns:1fr}.kcol{max-height:70vh}}
 
 /* tempo realizado por disciplina: pizza única; --s1..--s8 = cor fixa de cada disciplina (paleta validada p/ daltonismo, claro e escuro) */
-:root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767}}
-:root[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767}
+:root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948;--s9:#0f9fb3;--s10:#8d5a2b;--s11:#b145c9;--s12:#5f7a96}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--s9:#27b5c8;--s10:#b07a46;--s11:#c873dc;--s12:#8aa1bb}}
+:root[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--s9:#27b5c8;--s10:#b07a46;--s11:#c873dc;--s12:#8aa1bb}
 .time-pie{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:center}
 .donut{width:100%;max-width:240px;height:auto;margin:0 auto;display:block}
 .donut circle{fill:none;stroke-width:44}
@@ -1198,6 +1209,8 @@ function lineChart(labels, values, { h = 180 } = {}) {
   labels.forEach((l, i) => g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(l)}</text>`);
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
+// cor fixa da série i (disciplina na ordem do plano): 12 cores e, além disso, tons gerados pelo ângulo de ouro
+const corSerie = i => i < 0 ? "var(--ink-3)" : i < 12 ? `var(--s${i + 1})` : `hsl(${Math.round((i * 137.5) % 360)} 55% 52%)`;
 const hbars = rows => rows.map(r => `<div class="hb"><span class="lbl" title="${esc(r.l)}">${esc(r.l)}</span>${bar(r.p)}<span class="v">${r.v}</span></div>`).join("");
 
 /* ================= navegação ================= */
@@ -1279,7 +1292,7 @@ const HELP = {
   },
   simulados: {
     serve: "Transforma o Caderno de erros em prova: as questões que você errou voltam embaralhadas para você ver se agora acerta.",
-    fazer: ["Escolha a disciplina, quais erros entram (por padrão, os ainda não corrigidos) e quantas questões, e clique em “Começar simulado”.", "Com alternativas cadastradas no erro, clique na alternativa e confirme: a correção é automática. Sem alternativas, escreva sua resposta, clique em “Ver resposta” e marque se acertou.", "No resultado, os erros que se repetiram voltam para “Em revisão” e ganham uma revisão por erros para amanhã. Os acertados podem ser marcados como corrigidos.", "Acompanhe a evolução dos acertos no histórico."],
+    fazer: ["Escolha a disciplina, quais erros entram (por padrão, os ainda não corrigidos) e quantas questões, e clique em “Começar simulado”.", "Com uma disciplina escolhida, marque em “Conteúdos” só o que quer treinar, por exemplo uma ou mais leis de Legislação. Sem nada marcado, entram todos os conteúdos da disciplina.", "Com alternativas cadastradas no erro, clique na alternativa e confirme: a correção é automática. Sem alternativas, escreva sua resposta, clique em “Ver resposta” e marque se acertou.", "No resultado, os erros que se repetiram voltam para “Em revisão” e ganham uma revisão por erros para amanhã. Os acertados podem ser marcados como corrigidos.", "Acompanhe a evolução dos acertos no histórico."],
     dica: "Só entram no simulado os erros com o enunciado preenchido. Quanto mais alternativas cadastradas, mais o simulado parece com a prova.",
   },
   conta: {
@@ -1671,19 +1684,26 @@ const LETRAS = ["A", "B", "C", "D", "E"];
 const gab0 = e => e.gabarito || ((e.correta || "").match(/^\s*([A-E])\s*[)\.\-:]/i) || [])[1]?.toUpperCase() || "";
 const isMC = e => !!(e.gabarito && e.alternativas && e.alternativas[e.gabarito] && Object.values(e.alternativas).filter(Boolean).length >= 2);
 const simulados = () => all("simulado").sort((a, b) => (b.feitoEm || "").localeCompare(a.feitoEm || ""));
-let SIM = null, sf = { disc: "", fonte: "abertos", qtd: "10" };
-const simPool = () => errors().filter(e => (e.enunciado || "").trim() && (!sf.disc || e.disciplina === sf.disc) && (sf.fonte === "todos" || e.status !== "corrigido"));
+let SIM = null, sf = { disc: "", fonte: "abertos", qtd: "10", conts: [] }; // conts: assuntos escolhidos (vazio = todos da disciplina)
+const simBase = () => errors().filter(e => (e.enunciado || "").trim() && (!sf.disc || e.disciplina === sf.disc) && (sf.fonte === "todos" || e.status !== "corrigido"));
+const simPool = () => simBase().filter(e => !sf.conts.length || sf.conts.includes(e.assunto || ""));
+// conteúdos (assuntos) da disciplina que têm questões no Caderno de erros, na ordem do cronograma
+function simConteudos() {
+  const ordem = new Map(contents().map((c, i) => [c.assunto, i])), base = simBase(), todos = errors().filter(e => (e.enunciado || "").trim() && e.disciplina === sf.disc);
+  return [...new Set(todos.map(e => e.assunto || ""))].map(a => ({ a, n: base.filter(e => (e.assunto || "") === a).length }))
+    .sort((x, y) => (ordem.get(x.a) ?? 1e9) - (ordem.get(y.a) ?? 1e9) || x.a.localeCompare(y.a, "pt-BR"));
+}
 function simStart() {
   const pool = simPool().map(e => e.id), n = sf.qtd === "todas" ? pool.length : Math.min(+sf.qtd, pool.length);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  SIM = { ids: pool.slice(0, n), i: 0, resp: [], sel: null, ver: false, txt: "", disc: sf.disc, fim: null }; render(); window.scrollTo(0, 0);
+  SIM = { ids: pool.slice(0, n), i: 0, resp: [], sel: null, ver: false, txt: "", disc: sf.disc, conts: sf.conts.slice(), fim: null }; render(); window.scrollTo(0, 0);
 }
 async function simAnswer(escolha, acertou) { SIM.resp[SIM.i] = { id: SIM.ids[SIM.i], escolha, acertou }; render(); }
 async function simNext() {
   SIM.i++; SIM.sel = null; SIM.ver = false; SIM.txt = "";
   if (SIM.i < SIM.ids.length) { render(); window.scrollTo(0, 0); return; }
   // fim: guarda o resultado; quem errou de novo volta para "Em revisão" e ganha revisão por erros para amanhã
-  const acertos = SIM.resp.filter(r => r.acertou).length, rec = { id: uid("sm"), kind: "simulado", feitoEm: new Date().toISOString(), data: TODAY(), disciplina: SIM.disc, total: SIM.resp.length, acertos, itens: SIM.resp };
+  const acertos = SIM.resp.filter(r => r.acertou).length, rec = { id: uid("sm"), kind: "simulado", feitoEm: new Date().toISOString(), data: TODAY(), disciplina: SIM.disc, conteudos: SIM.conts || [], total: SIM.resp.length, acertos, itens: SIM.resp };
   await put(rec); let novas = 0;
   for (const r of SIM.resp.filter(r => !r.acertou)) {
     const e = get(r.id); if (!e) continue;
@@ -1710,9 +1730,17 @@ function vSimulados() {
       ${fld("Disciplina", `<select id="sfDisc">${opts(discs, sf.disc, "Todas as disciplinas")}</select>`)}
       ${fld("Quais erros", `<select id="sfFonte">${opts([["abertos", "Ainda não corrigidos"], ["todos", "Todos os erros"]], sf.fonte)}</select>`)}
       ${fld("Questões", `<select id="sfQtd">${opts([["5", "5 questões"], ["10", "10 questões"], ["20", "20 questões"], ["todas", "Todas"]], sf.qtd)}</select>`)}
-    </div>
+    </div>${sf.disc ? simContHTML() : `<p class="small muted" style="margin-top:12px">Escolha uma disciplina para selecionar quais conteúdos entram no simulado.</p>`}
     <div class="row" style="margin-top:16px"><button class="btn primary" data-act="sim-start" ${n ? "" : "disabled"}>${ic("quiz")}${n ? `Começar simulado · ${n} ${n === 1 ? "questão" : "questões"}` : "Nenhuma questão com esses filtros"}</button>
       <span class="small muted">${pool.length} disponíve${pool.length === 1 ? "l" : "is"} · ${mc} de múltipla escolha${semEnun ? ` · ${semEnun} erro${semEnun === 1 ? "" : "s"} sem enunciado fica${semEnun === 1 ? "" : "m"} de fora` : ""}</span></div></div>` + simHistory();
+}
+function simContHTML() {
+  const cs = simConteudos(); if (!cs.length) return "";
+  const marcados = sf.conts.filter(a => cs.some(c => c.a === a)), todos = !marcados.length;
+  return `<div class="sim-cont"><div class="sim-cont-h"><span><b>Conteúdos</b> <span class="small muted">${todos ? "todos os conteúdos da disciplina" : `${marcados.length} de ${cs.length} escolhido${marcados.length === 1 ? "" : "s"}`}</span></span>
+      <span class="row" style="gap:6px"><button type="button" class="btn sm ghost" data-act="sf-todos" ${todos ? "disabled" : ""}>Todos</button></span></div>
+    <div class="sim-cont-l" id="sfCont">${cs.map(c => `<label class="sim-ck${c.n ? "" : " vazio"}"><input type="checkbox" value="${esc(c.a)}" ${!todos && marcados.includes(c.a) ? "checked" : ""}><span>${esc(c.a || "Sem assunto")}</span><em class="num" title="questões disponíveis">${c.n}</em></label>`).join("")}</div>
+    <p class="small muted" style="margin:6px 0 0">Marque um ou mais conteúdos para simular só eles. Sem nenhum marcado, entram todos.</p></div>`;
 }
 function simQuestion() {
   const e = get(SIM.ids[SIM.i]), n = SIM.ids.length, r = SIM.resp[SIM.i];
@@ -1749,7 +1777,7 @@ function simHistory() {
   const last = hs.slice(0, 10).reverse();
   return `<div class="grid g2">${hs.length > 1 ? `<div class="card"><div class="card-h"><h2>Evolução dos acertos</h2><p>últimos simulados · linha tracejada = 70%</p></div>${lineChart(last.map(h => fmtD(h.data)), last.map(h => pct1(h.acertos, h.total)))}</div>` : ""}
     <div class="card"><div class="card-h"><h2>Simulados feitos</h2><span class="chip">${hs.length}</span></div><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Disciplina</th><th class="n">Acertos</th><th class="n">%</th></tr></thead><tbody>
-      ${hs.slice(0, 15).map(h => `<tr><td class="num">${fmtD(h.data)}</td><td>${esc(h.disciplina || "Todas")}</td><td class="n">${h.acertos}/${h.total}</td><td class="n"><span class="chip ${pct1(h.acertos, h.total) >= 80 ? "ok" : pct1(h.acertos, h.total) >= 70 ? "and" : "bad"}">${fmtPct(pct1(h.acertos, h.total))}</span></td></tr>`).join("")}</tbody></table></div></div></div>`;
+      ${hs.slice(0, 15).map(h => `<tr><td class="num">${fmtD(h.data)}</td><td>${esc(h.disciplina || "Todas")}${h.conteudos && h.conteudos.length ? `<small class="muted" style="display:block" title="${esc(h.conteudos.join(" · "))}">${h.conteudos.length === 1 ? esc(h.conteudos[0]) : h.conteudos.length + " conteúdos"}</small>` : ""}</td><td class="n">${h.acertos}/${h.total}</td><td class="n"><span class="chip ${pct1(h.acertos, h.total) >= 80 ? "ok" : pct1(h.acertos, h.total) >= 70 ? "and" : "bad"}">${fmtPct(pct1(h.acertos, h.total))}</span></td></tr>`).join("")}</tbody></table></div></div></div>`;
 }
 
 /* ---------- Revisões ---------- */
@@ -1966,7 +1994,7 @@ function hoursPie(w) {
   const rows = hoursByDisc(w).filter(x => x.done > 0).map(x => Object.assign(x, { i: order.indexOf(x.d) }))
     .sort((a, b) => (a.i < 0) - (b.i < 0) || a.i - b.i);
   const tot = rows.reduce((a, x) => a + x.done, 0), plan = hoursByDisc(w).reduce((a, x) => a + x.plan, 0);
-  const color = x => x.i >= 0 && x.i < 8 ? `var(--s${x.i + 1})` : "var(--ink-3)";
+  const color = x => corSerie(x.i);
   const name = x => x.i < 0 ? "Sem conteúdo vinculado" : x.d;
   const R = 70, C = 2 * Math.PI * R, gap = rows.length > 1 ? 2 : 0; let acc = 0;
   const arcs = rows.map(x => { const len = C * x.done / tot, a = `<circle cx="100" cy="100" r="${R}" stroke="${color(x)}" stroke-dasharray="${Math.max(0.5, len - gap)} ${C}" stroke-dashoffset="${-(acc + gap / 2)}"><title>${esc(name(x))}: ${hm(x.done)} (${Math.round(x.done / tot * 100)}%)</title></circle>`; acc += len; return a; }).join("");
@@ -2430,7 +2458,7 @@ function vMapas() {
   // menu de módulos (um por disciplina, como o menu lateral do dash); clicando, abre a lista dos mapas em ordem alfabética
   const SEM = "Sem disciplina", dOf = m => m.disciplina || SEM;
   const order = [...new Set([...contents().map(c => c.disciplina), ...ms.map(dOf)].filter(Boolean))];
-  const cor = d => { const i = order.indexOf(d); return d !== SEM && i >= 0 && i < 8 ? `var(--s${i + 1})` : "var(--ink-3)"; };
+  const cor = d => d === SEM ? "var(--ink-3)" : corSerie(order.indexOf(d));
   const discs = [...new Set(ms.map(dOf))].sort((a, b) => (a === SEM) - (b === SEM) || order.indexOf(a) - order.indexOf(b));
   const abc = (a, b) => (a.titulo || "").localeCompare(b.titulo || "", "pt-BR", { numeric: true, sensitivity: "base" });
   const busca = m => !mf.q || norm((m.titulo || "") + " " + ((get(m.contentId) || {}).assunto || "")).includes(norm(mf.q));
@@ -2986,7 +3014,8 @@ function bindView() {
   on("#rfSit", "change", e => { rf.sit = e.target.value; render(); });
   on("#rfDisc", "change", e => { rf.disc = e.target.value; render(); });
   on("#rfQ", "change", e => { rf.q = e.target.value; render(); });
-  on("#sfDisc", "change", e => { sf.disc = e.target.value; render(); });
+  on("#sfDisc", "change", e => { sf.disc = e.target.value; sf.conts = []; render(); });
+  on("#sfCont", "change", () => { sf.conts = [...document.querySelectorAll("#sfCont input:checked")].map(i => i.value); render(); });
   on("#sfFonte", "change", e => { sf.fonte = e.target.value; render(); });
   on("#sfQtd", "change", e => { sf.qtd = e.target.value; render(); });
   on("#hDay", "change", e => { hDay = e.target.value || TODAY(); render(); });
@@ -3058,6 +3087,7 @@ document.addEventListener("click", async e => {
     case "seed": seedExample(); break;
     case "clear-example": clearExample(); break;
     case "sim-start": simStart(); break;
+    case "sf-todos": sf.conts = []; render(); break;
     case "sim-pick": SIM.sel = a.dataset.l; render(); break;
     case "sim-confirm": { const e = get(SIM.ids[SIM.i]); if (SIM.sel) simAnswer(SIM.sel, SIM.sel === e.gabarito); break; }
     case "sim-show": SIM.txt = ($("#sim-txt") || {}).value || ""; SIM.ver = true; render(); break;
